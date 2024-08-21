@@ -126,7 +126,12 @@ if test -z "$XAS"; then
         XASFLAGS="--32"
       fi
     else
-      AC_MSG_ERROR([cross-assembler not found, please install binutils-i686-linux-gnu])
+      AC_PATH_PROG([XAS], [clang])
+      if test -n "$XAS"; then
+        XASFLAGS="-x assembler -target i686-unknown-linux-gnu -c -"
+      else
+        AC_MSG_ERROR([386 assembler not found, please install clang or binutils-i686-linux-gnu])
+      fi
     fi
   else
     XASFLAGS="--32"
@@ -171,7 +176,7 @@ if test -n "$CROSS_PREFIX"; then
     AC_MSG_ERROR([${CROSS_PREFIX}objcopy not found, CROSS_PREFIX is wrong])
   fi
 else
-  AC_PATH_PROGS([XOBJCOPY], [i686-linux-gnu-objcopy x86_64-linux-gnu-objcopy objcopy])
+  AC_PATH_PROGS([XOBJCOPY], [i686-linux-gnu-objcopy x86_64-linux-gnu-objcopy llvm-objcopy objcopy])
 fi
 if test -z "$XOBJCOPY"; then
   XOBJCOPY="$OBJCOPY"
