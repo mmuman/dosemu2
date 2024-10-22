@@ -33,7 +33,7 @@
 #include "dos.h"
 #include "dpmiops.h"
 
-#if DJ64_API_VER != 12
+#if DJ64_API_VER != 13
 #error wrong djdev64 version
 #endif
 
@@ -229,6 +229,8 @@ const struct dj64_api api = {
     .is_dos_ptr = dj64_dos_ptr,
     .get_handle = dj64_get_handle,
     .exit = dj64_exit,
+    .malloc = malloc,
+    .free = free,
 };
 
 static int do_open(const char *path, unsigned short flags)
