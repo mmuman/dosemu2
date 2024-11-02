@@ -388,9 +388,6 @@ static int mouse_warped = 0, force_grab = 0;
 static int X_map_mode = -1;
 static int X_unmap_mode = -1;
 
-static Atom comm_atom = None;
-static Boolean kdos_client = FALSE;    	/* started by kdos */
-
 /* Hints used by Motif compliant window managers */
 enum {
   MWM_HINTS_FUNCTIONS = (1L << 0),
@@ -489,10 +486,6 @@ static struct bitmap_desc X_lock_canvas(void);
 static void X_lock(void);
 static void X_unlock_canvas(void);
 static void X_unlock(void);
-
-void kdos_recv_msg(char *);
-void kdos_send_msg(char *);
-void kdos_close_msg(void);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -679,13 +672,11 @@ int X_init(void)
   if(s && (i = strtol(s, NULL, 0)) > 0) {
     mainwindow = i;
     our_window = FALSE;
-    kdos_client = TRUE;
     have_focus = TRUE;
     X_printf("X: X_init: using existing window (id = 0x%x)\n", i);
   }
   else {
     our_window = TRUE;
-    kdos_client = FALSE;
     mainwindow = normalwindow = XCreateSimpleWindow(
       display, rootwindow,
       0, 0,			/* Position */
@@ -723,14 +714,6 @@ int X_init(void)
       parentwindow = rootwindow;
     }
     X_printf("X: X_init: parent window: 0x%x\n", (unsigned) parentwindow);
-  }
-
-  /*
-   * used to communicate with kdos
-   */
-  if(kdos_client) {
-    comm_atom = XInternAtom(display, "DOSEMU_COMM_ATOM", False);
-    X_printf("X: X_init: got Atom: DOSEMU_COMM_ATOM = 0x%x\n", (unsigned) comm_atom);
   }
 
   X_printf("X: X_init: screen = %d, root = 0x%x, mainwindow = 0x%x\n",
@@ -891,8 +874,6 @@ void X_close(void)
   /* reset the speaker to it's default */
   register_speaker(NULL, NULL, NULL);
 #endif
-
-  if (kdos_client) kdos_close_msg();
 
 #ifdef HAVE_XVIDMODE
   X_xf86vm_done();
@@ -1578,10 +1559,6 @@ static int __X_handle_events(XEvent *e)
 	    if (config.X_noclose)
 	      break;
 	    return -1;
-	  }
-
-	  if(e->xclient.message_type == comm_atom) {
-	    kdos_recv_msg(e->xclient.data.b);
 	  }
 	  break;
 
@@ -2572,42 +2549,6 @@ static struct mouse_client Mouse_X =  {
   NULL,		/* close */
   X_show_mouse_cursor /* show_cursor */
 };
-
-
-/*
- * Doesn't really belong here!
- * It will go into a separate file. -- sw
- */
-
-#define KDOS_CLOSE_MSG	1
-
-void kdos_recv_msg(char *buf)
-{
-  fprintf(stderr, "got Msg %d\n", buf[0]);
-}
-
-void kdos_send_msg(char *buf)
-{
-  XEvent e;
-
-  if(!kdos_client) return;
-
-  e.xclient.type = ClientMessage;
-  e.xclient.serial = 0;
-  e.xclient.display = display;
-  e.xclient.window = parentwindow;
-  e.xclient.message_type = comm_atom;
-  e.xclient.format = 8;
-  memcpy(e.xclient.data.b, buf, sizeof e.xclient.data.b);
-
-  XSendEvent(display, parentwindow, False, 0, &e);
-}
-
-void kdos_close_msg(void)
-{
-  char m[20] = { KDOS_CLOSE_MSG, };
-  kdos_send_msg(m);
-}
 
 CONSTRUCTOR(static void init(void))
 {
