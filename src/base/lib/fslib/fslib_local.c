@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <utime.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include "fssvc.h"
@@ -228,6 +229,8 @@ static const struct fslib_ops fslops = {
   .seal = fslocal_seal,
   .exit = fslocal_done,
   .path_ok = fslocal_path_ok,
+  .shm_open = shm_open,
+  .shm_unlink = shm_unlink,
   .name = "local",
   .flags = FSFLG_NOSUID,
 };

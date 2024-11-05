@@ -157,6 +157,16 @@ int fslib_num_drives(void)
   return num_def_drives;
 }
 
+int fslib_shm_open(const char *name, int oflag, mode_t mode)
+{
+  return fssvc->shm_open(name, oflag, mode);
+}
+
+int fslib_shm_unlink(const char *name)
+{
+  return fssvc->shm_unlink(name);
+}
+
 void fslib_register_ops(const struct fslib_ops *ops)
 {
   const char *expect = (config.fs_backend ?: def_name);

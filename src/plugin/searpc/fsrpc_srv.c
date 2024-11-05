@@ -20,6 +20,7 @@
 #include <utime.h>
 #include <assert.h>
 #include <errno.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <searpc-server.h>
@@ -278,6 +279,22 @@ static int exit_1_svc(void)
     return 0;
 }
 
+static GObject* shm_open_1_svc(const char *name, int oflag, int mode)
+{
+    int fd;
+    TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
+    fd = shm_open(name, oflag, mode);
+    ASSERT_C(fd >= 0);
+    CALL(send_fd(sock_tx, fd));
+    close(fd);
+    return G_OBJECT(ret);
+}
+
+static int shm_unlink_1_svc(const char *name)
+{
+    return shm_unlink(name);
+}
+
 static const char *svc_name = "fsrpc";
 
 int fsrpc_srv_init(int tr_fd, int fd, plist_idx_t pi, setattr_t sa,
@@ -322,6 +339,10 @@ int fsrpc_srv_init(int tr_fd, int fd, plist_idx_t pi, setattr_t sa,
             searpc_signature_int__int_string());
     searpc_server_register_function(svc_name, exit_1_svc, "exit_1",
             searpc_signature_int__void());
+    searpc_server_register_function(svc_name, shm_open_1_svc, "shm_open_1",
+            searpc_signature_int__string_int_int());
+    searpc_server_register_function(svc_name, shm_unlink_1_svc, "shm_unlink_1",
+            searpc_signature_int__string());
     return 0;
 }
 

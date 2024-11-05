@@ -393,3 +393,28 @@ int fssvc_exit(void)
         CHECK_RPC(error);
     return ret;
 }
+
+int fssvc_shm_open(const char *name, int oflag, mode_t mode)
+{
+    GObject* ret;
+    GError *error = NULL;
+    ret = searpc_client_call__object(clnt, "shm_open_1", TEST_OBJECT_TYPE,
+                                     &error, 3,
+                                     "string", name, "int", oflag,
+                                     "int", mode);
+    CHECK_RPC(error);
+    CHECK_RET(ret);
+    g_object_unref(ret);
+    return recv_fd(sock_rx);
+}
+
+int fssvc_shm_unlink(const char *name)
+{
+    int ret;
+    GError *error = NULL;
+    ret = searpc_client_call__int(clnt, "shm_unlink_1",
+                                  &error, 1,
+                                  "string", name);
+    CHECK_RPC(error);
+    return ret;
+}

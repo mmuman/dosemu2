@@ -23,4 +23,7 @@ int fssvc_utime(int id, const char *path, time_t atime, time_t mtime);
 int fssvc_path_ok(int id, const char *path);
 int fssvc_exit(void);
 
+int fssvc_shm_open(const char *name, int oflag, mode_t mode);
+int fssvc_shm_unlink(const char *name);
+
 #endif

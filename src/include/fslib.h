@@ -44,4 +44,7 @@ void fslib_done(void);
 int fslib_path_ok(int idx, const char *path);
 int fslib_num_drives(void);
 
+int fslib_shm_open(const char *name, int oflag, mode_t mode);
+int fslib_shm_unlink(const char *name);
+
 #endif

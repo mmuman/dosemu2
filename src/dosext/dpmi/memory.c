@@ -32,6 +32,7 @@
 #include <errno.h>
 #include "utilities.h"
 #include "shlock.h"
+#include "fslib.h"
 #include "mapping.h"
 #include "smalloc.h"
 #include "emudpmi.h"
@@ -605,13 +606,15 @@ dpmi_pm_block *DPMI_mallocShared(dpmi_pm_block_root *root,
     }
 
     asprintf(&shmname, "/dosemu_%s", name);
-    fd = shm_open(shmname, oflags, S_IRUSR | S_IWUSR);
+    fd = fslib_shm_open(shmname, oflags,
+            S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fd == -1 && (flags & SHM_EXCL) && errno == EEXIST) {
         error("shm object %s already exists\n", shmname);
         /* SHM_EXCL should provide the exclusive name (with pid),
          * so the object might be orphaned */
-        shm_unlink(shmname);
-        fd = shm_open(shmname, oflags, S_IRUSR | S_IWUSR);
+        fslib_shm_unlink(shmname);
+        fd = fslib_shm_open(shmname, oflags,
+                S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     }
     if (fd == -1) {
         perror("shm_open()");
@@ -630,7 +633,8 @@ dpmi_pm_block *DPMI_mallocShared(dpmi_pm_block_root *root,
     } else {
         err = ftruncate(fd, size);
         if (err) {
-            error("unable to ftruncate to %x for shm %s\n", size, name);
+            error("unable to ftruncate to %x for shm %s: %s\n", size, name,
+                  strerror(errno));
             goto err2;
         }
     }
@@ -716,7 +720,8 @@ static dpmi_pm_block *DPMI_mallocSharedNS_common(dpmi_pm_block_root *root,
     }
     err = ftruncate(fd, size);
     if (err) {
-        error("unable to ftruncate to %x for shm %s\n", size, name);
+        error("unable to ftruncate to %x for shm %s: %s\n", size, name,
+              strerror(errno));
         goto err2;
     }
 
@@ -854,7 +859,7 @@ int DPMI_freeShared(dpmi_pm_block_root *root, uint32_t handle)
     ptr->shlock = NULL;
     if (rc > 0) {
         D_printf("DPMI: unlink shm %s\n", ptr->rshmname);
-        shm_unlink(ptr->rshmname);
+        fslib_shm_unlink(ptr->rshmname);
     }
     shlock_close(exlock);
 
@@ -912,7 +917,7 @@ int DPMI_freeShPartial(dpmi_pm_block_root *root, uint32_t handle)
         rc = shlock_close(ptr->shlock);
     if (rc > 0) {
         D_printf("DPMI: unlink shm %s\n", ptr->rshmname);
-        shm_unlink(ptr->rshmname);
+        fslib_shm_unlink(ptr->rshmname);
     }
     shlock_close(exlock);
 
