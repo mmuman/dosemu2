@@ -12,7 +12,11 @@
 #      chmod 0440 /etc/sudoers.d/dosemu
 
 if [ "$1" = "setup" ] ; then
-	ip tuntap add mode tap user ${SUDO_UID} group dosemu2 tap0
+	if getent group dosemu2 >/dev/null; then
+		ip tuntap add mode tap group dosemu2 tap0
+	else
+		ip tuntap add mode tap user ${SUDO_UID} tap0
+	fi
 	brctl addif virbr0 tap0
 	ifconfig tap0 promisc up
 
