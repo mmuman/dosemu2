@@ -369,25 +369,31 @@ void map_memory_space(void)
 
   smregister_default_error_notifier(do_sm_error);
   open_mapping(MAPPING_INIT_LOWRAM);
-  g_printf ("DOS+HMA memory area being mapped in\n");
-  lowmem = alloc_mapping_huge_page_aligned(MAPPING_LOWMEM, LOWMEM_SIZE +
-	EXTMEM_SIZE);
-  if (lowmem == MAP_FAILED) {
-    perror("LOWRAM alloc");
-    leavedos(98);
-  }
 
   phys_low = roundUpToNextPowerOfTwo(LOWMEM_SIZE + EXTMEM_SIZE + XMS_SIZE);
   memsize = phys_low;
   if (config.dpmi)
     /* LOWMEM_SIZE accounted twice for alignment */
     memsize += config.dpmi_base + HUGE_PAGE_ALIGN(dpmi_mem_size());
+  g_printf ("DOS+HMA memory area being mapped in\n");
+  lowmem = alloc_mapping_huge_page_aligned(MAPPING_LOWMEM, memsize);
+  if (lowmem == MAP_FAILED) {
+    perror("LOWRAM alloc");
+    leavedos(98);
+  }
   mem_base = mem_reserve(memsize);
   mem_base_mask = ~(uintptr_t)0;
 #ifdef __x86_64__
   if (_MAP_32BIT) mem_base_mask = 0xffffffffu;
 #endif
   register_hardware_ram_virtual('L', 0, LOWMEM_SIZE + HMASIZE, 0);
+  result = alias_mapping_high(MAPPING_LOWMEM, 0, memsize,
+			      PROT_READ | PROT_WRITE | PROT_EXEC, lowmem);
+  if (result == -1) {
+    perror ("DPMI mmap");
+    exit(EXIT_FAILURE);
+  }
+  /* now populate mem_bases */
   result = alias_mapping(MAPPING_LOWMEM, 0, LOWMEM_SIZE + HMASIZE,
 			 PROT_READ | PROT_WRITE | PROT_EXEC, lowmem);
   if (result == -1) {
@@ -441,11 +447,18 @@ void map_memory_space(void)
           MEM_BASE32(LOWMEM_SIZE + HMASIZE), LOWMEM_SIZE + HMASIZE,
           PROT_READ | PROT_WRITE | PROT_EXEC);
     if (EXTMEM_SIZE > HMASIZE) {  // <HMASIZE means disabled, by not 0
+      dosaddr_t ext_va = DOSADDR_REL(ptr2);
       /* create ext_mem alias for dpmi */
-      result = alias_mapping(MAPPING_EXTMEM, DOSADDR_REL(ptr2),
+      result = alias_mapping(MAPPING_EXTMEM, ext_va,
 			 EXTMEM_SIZE - HMASIZE,
 			 PROT_READ | PROT_WRITE,
-			 lowmem + LOWMEM_SIZE + HMASIZE);
+			 LOWMEM(LOWMEM_SIZE + HMASIZE));
+      assert(result != -1);
+      /* and avoid unneeded ext_mem alias above HMA */
+      result = alias_mapping(MAPPING_EXTMEM, LOWMEM_SIZE + HMASIZE,
+			 EXTMEM_SIZE - HMASIZE,
+			 PROT_READ | PROT_WRITE,
+			 LOWMEM(ext_va));
       assert(result != -1);
     }
   }
