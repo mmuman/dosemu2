@@ -336,10 +336,9 @@ static int mapping_is_hole(void *start, size_t size)
 // userspace_addr be identical, so align to a huge page boundary (2MB).
 // This also helps debugging, since subtracting hex numbers is much easier that way
 // for a human being.
-void *mmap_mapping_huge_page_aligned(int cap, size_t mapsize, int protect)
+static void *do_huge_page(int flags, size_t mapsize, int protect)
 {
   size_t edge;
-  int flags = (cap & MAPPING_INIT_LOWRAM) ? _MAP_32BIT : 0;
   unsigned char *addr = mmap(NULL, mapsize + HUGE_PAGE_SIZE, protect,
 			     MAP_PRIVATE | flags | MAP_ANONYMOUS, -1, 0);
   if (addr == MAP_FAILED)
@@ -362,14 +361,22 @@ void *mmap_mapping_huge_page_aligned(int cap, size_t mapsize, int protect)
   if (edge > 0)
     munmap(&addr[mapsize], edge);
 
+  return addr;
+}
+
+void *mmap_mapping_huge_page_aligned(int cap, size_t mapsize, int protect)
+{
+  int flags = (cap & MAPPING_INIT_LOWRAM) ? _MAP_32BIT : 0;
+  void *addr = do_huge_page(flags, mapsize, protect);
+  if (addr == MAP_FAILED)
+    return addr;
   if (cap & MAPPING_INIT_LOWRAM) {
     mem_bases[MEM_BASE].base = addr;
     mem_bases[MEM_BASE].size = mapsize;
     if (is_kvm_map(cap)) {
       mapsize = LOWMEM_SIZE + HMASIZE;
       protect = PROT_READ|PROT_WRITE|PROT_EXEC;
-      void *kvm_base = mmap_mapping_huge_page_aligned(MAPPING_LOWMEM,
-                                                      mapsize, protect);
+      void *kvm_base = do_huge_page(0, mapsize, protect);
       if (kvm_base == MAP_FAILED)
 	return kvm_base;
       mem_bases[KVM_BASE].base = kvm_base;
@@ -382,7 +389,6 @@ void *mmap_mapping_huge_page_aligned(int cap, size_t mapsize, int protect)
     }
 #endif
   }
-
   return addr;
 }
 
@@ -644,7 +650,7 @@ void *alloc_mapping_huge_page_aligned(int cap, size_t mapsize)
 {
   void *addr;
   Q__printf("MAPPING: alloc_huge_page_aligned, cap=%s size=%#zx\n", cap, mapsize);
-  addr = mmap_mapping_huge_page_aligned(cap, mapsize, PROT_NONE);
+  addr = do_huge_page(0, mapsize, PROT_NONE);
   return addr == MAP_FAILED ? MAP_FAILED : do_alloc_mapping(cap, mapsize, addr);
 }
 
