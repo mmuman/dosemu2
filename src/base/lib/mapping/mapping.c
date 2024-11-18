@@ -366,10 +366,10 @@ void *mmap_mapping_huge_page_aligned(int cap, size_t mapsize, int protect)
     mem_bases[MEM_BASE].base = addr;
     mem_bases[MEM_BASE].size = mapsize;
     if (is_kvm_map(cap)) {
-      cap = MAPPING_LOWMEM;
       mapsize = LOWMEM_SIZE + HMASIZE;
       protect = PROT_READ|PROT_WRITE|PROT_EXEC;
-      void *kvm_base = mmap_mapping_huge_page_aligned(cap, mapsize, protect);
+      void *kvm_base = mmap_mapping_huge_page_aligned(MAPPING_LOWMEM,
+                                                      mapsize, protect);
       if (kvm_base == MAP_FAILED)
 	return kvm_base;
       mem_bases[KVM_BASE].base = kvm_base;
