@@ -1054,3 +1054,8 @@ int unalias_mapping_pa(int cap, unsigned addr, size_t mapsize)
   invalidate_unprotected_page_cache(va, mapsize);
   return 1;
 }
+
+void *mmap_shm_ux(void *addr, size_t length, int prot, int fd)
+{
+  return mmap(addr, length, prot, MAP_SHARED | MAP_FIXED, fd, 0);
+}

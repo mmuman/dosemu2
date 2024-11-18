@@ -95,6 +95,9 @@ int munmap_mapping(int cap, dosaddr_t targ, size_t mapsize);
 int mprotect_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect);
 int restore_mapping(int cap, dosaddr_t targ, size_t mapsize);
 
+/* below wrapper is needed only for remoting the mapping subsystem */
+void *mmap_shm_ux(void *addr, size_t length, int prot, int fd);
+
 struct mappingdrivers {
   const char *key;
   const char *name;

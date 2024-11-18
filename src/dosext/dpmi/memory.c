@@ -649,7 +649,7 @@ dpmi_pm_block *DPMI_mallocShared(dpmi_pm_block_root *root,
     if (!(flags & SHM_NOEXEC))
         prot |= PROT_EXEC;
     /* this mem is already mapped to KVM so we use plain mmap() */
-    addr2 = mmap(addr, size, prot, MAP_SHARED | MAP_FIXED, fd, 0);
+    addr2 = mmap_shm_ux(addr, size, prot, fd);
     close(fd);
     fd = -1;
     if (addr2 != addr) {
@@ -733,7 +733,7 @@ static dpmi_pm_block *DPMI_mallocSharedNS_common(dpmi_pm_block_root *root,
     if (!(flags & SHM_NOEXEC))
         prot |= PROT_EXEC;
     /* this mem is already mapped to KVM so we use plain mmap() */
-    addr2 = mmap(addr, size, prot, MAP_SHARED | MAP_FIXED, fd, 0);
+    addr2 = mmap_shm_ux(addr, size, prot, fd);
     close(fd);
     fd = -1;
     if (addr2 != addr) {
