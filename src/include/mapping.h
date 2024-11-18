@@ -88,6 +88,8 @@ int alias_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect, void *so
 int alias_mapping_pa(int cap, unsigned addr, size_t mapsize, int protect, void *source);
 int unalias_mapping_pa(int cap, unsigned addr, size_t mapsize);
 void *alias_mapping_ux(int cap, size_t mapsize, int protect, void *source);
+int alias_mapping_high(int cap, dosaddr_t targ, size_t mapsize, int protect,
+    void *source);
 
 int munmap_mapping(int cap, dosaddr_t targ, size_t mapsize);
 int mprotect_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect);

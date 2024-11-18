@@ -104,13 +104,15 @@ static void update_aliasmap(dosaddr_t dosaddr, size_t mapsize,
   unsigned addr2;
   struct hardware_ram *hw;
 
-  if (dosaddr >= mem_bases[MEM_BASE].size)
+  invalidate_unprotected_page_cache(dosaddr, mapsize);
+  if (dosaddr >= ALIAS_SIZE)
     return;
+  if (dosaddr + mapsize > ALIAS_SIZE)
+    mapsize = ALIAS_SIZE - dosaddr;
   addr2 = do_find_hardware_ram(dosaddr, mapsize, &hw);
   if (addr2 == (unsigned)-1)
     return;
   hwram_update_aliasmap(hw, addr2, mapsize, unixaddr);
-  invalidate_unprotected_page_cache(dosaddr, mapsize);
 }
 
 void *dosaddr_to_unixaddr(dosaddr_t addr)
@@ -237,6 +239,22 @@ void *alias_mapping_ux(int cap, size_t mapsize, int protect, void *source)
 {
   void *target = (void *)-1;
   return mappingdriver->alias(cap, target, mapsize, protect, source);
+}
+
+int alias_mapping_high(int cap, dosaddr_t targ, size_t mapsize, int protect,
+    void *source)
+{
+  void *addr;
+
+  Q__printf("MAPPING: alias, cap=%s, targ=%#x, size=%zx, protect=%x, source=%p\n",
+	cap, targ, mapsize, protect, source);
+  addr = mappingdriver->alias(cap, MEM_BASE32(targ), mapsize, protect, source);
+  if (addr == MAP_FAILED)
+    return -1;
+  Q__printf("MAPPING: %s alias created at %p\n", cap, addr);
+  if (is_kvm_map(cap))
+    mprotect_kvm(cap, targ, mapsize, protect);
+  return 0;
 }
 
 int alias_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect, void *source)
@@ -407,14 +425,13 @@ void *mmap_mapping(int cap, void *target, size_t mapsize, int protect)
 /* Restore mapping previously broken by direct mmap() call. */
 int restore_mapping(int cap, dosaddr_t targ, size_t mapsize)
 {
-  void *addr;
-  void *target;
+  int ret;
   assert((cap & MAPPING_DPMI) && (targ != (dosaddr_t)-1));
-  target = MEM_BASE32(targ);
-  addr = mmap_mapping(cap, target, mapsize, PROT_READ | PROT_WRITE);
+  ret = alias_mapping(cap, targ, mapsize, PROT_READ | PROT_WRITE,
+      LOWMEM(targ));
   if (is_kvm_map(cap))
     mprotect_kvm(cap, targ, mapsize, PROT_READ | PROT_WRITE);
-  return (addr == target ? 0 : -1);
+  return ret;
 }
 
 int mprotect_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect)
@@ -609,7 +626,7 @@ static void *do_alloc_mapping(int cap, size_t mapsize, void *addr)
   }
   mprotect(addr, mapsize, PROT_READ | PROT_WRITE);
 
-  if (cap & MAPPING_INIT_LOWRAM) {
+  if (cap & MAPPING_LOWMEM) {
     Q__printf("MAPPING: LOWRAM_INIT, cap=%s, base=%p\n", cap, addr);
     lowmem_base = addr;
   }
