@@ -611,7 +611,7 @@ static void *do_alloc_mapping(int cap, size_t mapsize, void *addr)
   }
   mprotect(addr, mapsize, PROT_READ | PROT_WRITE);
 
-  if (cap & MAPPING_INIT_LOWRAM) {
+  if (cap & MAPPING_LOWMEM) {
     Q__printf("MAPPING: LOWRAM_INIT, cap=%s, base=%p\n", cap, addr);
     lowmem_base = addr;
   }
