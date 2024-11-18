@@ -432,12 +432,14 @@ void map_memory_space(void)
   x_printf("Ext.Mem of size 0x%x at %#x\n", EXTMEM_SIZE - HMASIZE,
       LOWMEM_SIZE + HMASIZE);
 
-  /* establish ext_mem alias access for int15 */
+  /* establish ext_mem alias access for int15 within 32Mb window above dpmi */
   register_hardware_ram_virtual('X', LOWMEM_SIZE + HMASIZE, phys_rsv,
 	    DOSADDR_REL(ptr2));
   if (config.dpmi) {
-    register_hardware_ram_virtual('U', DOSADDR_REL(ptr2), phys_rsv,
-	    LOWMEM_SIZE + HMASIZE);
+    if (config.cpu_vm_dpmi == CPUVM_KVM)
+      mmap_kvm(MAPPING_LOWMEM, DOSADDR_REL(ptr2), phys_rsv,
+          MEM_BASE32(LOWMEM_SIZE + HMASIZE), LOWMEM_SIZE + HMASIZE,
+          PROT_READ | PROT_WRITE | PROT_EXEC);
     if (EXTMEM_SIZE > HMASIZE) {  // <HMASIZE means disabled, by not 0
       /* create ext_mem alias for dpmi */
       result = alias_mapping(MAPPING_EXTMEM, DOSADDR_REL(ptr2),
