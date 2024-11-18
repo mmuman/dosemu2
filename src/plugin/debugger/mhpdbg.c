@@ -21,7 +21,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <assert.h>
-
+#include <errno.h>
 #include "bitops.h"
 #include "emu.h"
 #include "ioselect.h"
@@ -171,11 +171,14 @@ static void mhp_init(void)
   if (!retval) {
     retval = mkfifo(pipename_out, S_IFIFO | 0600);
     if (!retval) {
+      /* O_NONBLOCK avoids blocking of open() itself */
       mhpdbg.fdin = open(pipename_in, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
       if (mhpdbg.fdin != -1) {
         /* NOTE: need to open read/write else it will block */
         mhpdbg.fdout = open(pipename_out, O_RDWR | O_CLOEXEC);
         if (mhpdbg.fdout != -1) {
+          /* Remove O_NONBLOCK. O_CLOEXEC unaffected. */
+          fcntl(mhpdbg.fdin, F_SETFL, 0);
           add_to_io_select(mhpdbg.fdin, mhp_input_async, NULL);
         }
         else {
@@ -223,8 +226,10 @@ static int mhp_input(void)
 
   mhpdbg.nbytes = read(mhpdbg.fdin, mhpdbg.recvbuf, SRSIZE);
 
-  if (mhpdbg.nbytes == -1)
+  if (mhpdbg.nbytes == -1) {
+    error("mhp read(): %s", strerror(errno));
     return -1;
+  }
 
   if (mhpdbg.nbytes == 0 && !wait_for_debug_terminal) {
     if (mhpdbgc.stopped) {
