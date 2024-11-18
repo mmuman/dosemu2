@@ -104,6 +104,7 @@ static void update_aliasmap(dosaddr_t dosaddr, size_t mapsize,
   unsigned addr2;
   struct hardware_ram *hw;
 
+  invalidate_unprotected_page_cache(dosaddr, mapsize);
   if (dosaddr >= ALIAS_SIZE)
     return;
   if (dosaddr + mapsize > ALIAS_SIZE)
@@ -112,7 +113,6 @@ static void update_aliasmap(dosaddr_t dosaddr, size_t mapsize,
   if (addr2 == (unsigned)-1)
     return;
   hwram_update_aliasmap(hw, addr2, mapsize, unixaddr);
-  invalidate_unprotected_page_cache(dosaddr, mapsize);
 }
 
 void *dosaddr_to_unixaddr(dosaddr_t addr)
