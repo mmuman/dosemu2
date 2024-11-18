@@ -104,8 +104,10 @@ static void update_aliasmap(dosaddr_t dosaddr, size_t mapsize,
   unsigned addr2;
   struct hardware_ram *hw;
 
-  if (dosaddr >= mem_bases[MEM_BASE].size)
+  if (dosaddr >= ALIAS_SIZE)
     return;
+  if (dosaddr + mapsize > ALIAS_SIZE)
+    mapsize = ALIAS_SIZE - dosaddr;
   addr2 = do_find_hardware_ram(dosaddr, mapsize, &hw);
   if (addr2 == (unsigned)-1)
     return;
