@@ -366,6 +366,7 @@ void map_memory_space(void)
   int result;
   uint32_t memsize;
   int32_t phys_rsv, phys_low;
+  dosaddr_t ext_va;
 
   smregister_default_error_notifier(do_sm_error);
   open_mapping(MAPPING_INIT_LOWRAM);
@@ -439,29 +440,14 @@ void map_memory_space(void)
       LOWMEM_SIZE + HMASIZE);
 
   /* establish ext_mem alias access for int15 within 32Mb window above dpmi */
-  register_hardware_ram_virtual('X', LOWMEM_SIZE + HMASIZE, phys_rsv,
-	    DOSADDR_REL(ptr2));
-  if (config.dpmi) {
-    if (config.cpu_vm_dpmi == CPUVM_KVM)
-      mmap_kvm(MAPPING_LOWMEM, DOSADDR_REL(ptr2), phys_rsv,
-          MEM_BASE32(LOWMEM_SIZE + HMASIZE), LOWMEM_SIZE + HMASIZE,
-          PROT_READ | PROT_WRITE | PROT_EXEC);
-    if (EXTMEM_SIZE > HMASIZE) {  // <HMASIZE means disabled, by not 0
-      dosaddr_t ext_va = DOSADDR_REL(ptr2);
-      /* create ext_mem alias for dpmi */
-      result = alias_mapping(MAPPING_EXTMEM, ext_va,
-			 EXTMEM_SIZE - HMASIZE,
-			 PROT_READ | PROT_WRITE,
-			 LOWMEM(LOWMEM_SIZE + HMASIZE));
-      assert(result != -1);
-      /* and avoid unneeded ext_mem alias above HMA */
-      result = alias_mapping(MAPPING_EXTMEM, LOWMEM_SIZE + HMASIZE,
-			 EXTMEM_SIZE - HMASIZE,
-			 PROT_READ | PROT_WRITE,
-			 LOWMEM(ext_va));
-      assert(result != -1);
-    }
-  }
+  ext_va = DOSADDR_REL(ptr2);
+  /* Note: can't map directly to lowmem_base here because XMS uses the
+   * same window with different source. */
+  register_hardware_ram_virtual('X', LOWMEM_SIZE + HMASIZE, phys_rsv, ext_va);
+  if (config.dpmi && config.cpu_vm_dpmi == CPUVM_KVM)
+    mmap_kvm(MAPPING_LOWMEM, DOSADDR_REL(ptr2), phys_rsv,
+        MEM_BASE32(LOWMEM_SIZE + HMASIZE), LOWMEM_SIZE + HMASIZE,
+        PROT_READ | PROT_WRITE | PROT_EXEC);
 
   /* R/O protect 0xf0000-0xf4000 */
   if (!config.umb_f0) {
