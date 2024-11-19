@@ -33,6 +33,7 @@
 #include "emudpmi.h"
 #include "dpmisel.h"
 #include "dnative.h"
+#include "dnpriv.h"
 
 #define EMU_X86_FXSR_MAGIC	0x0000
 static coroutine_t dpmi_tid;
@@ -290,6 +291,7 @@ static void dpmi_thr(void *arg)
 
 int native_dpmi_setup(void)
 {
+    signative_init();
     co_handle = co_thread_init(PCL_C_MC);
     return 0;
 }

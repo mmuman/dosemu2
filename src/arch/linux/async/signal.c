@@ -34,7 +34,6 @@
 #include "lowmem.h"
 #include "coopth.h"
 #include "emudpmi.h"
-#include "dnative.h"
 #include "pic.h"
 #include "ipx.h"
 #include "pktdrvr.h"
@@ -263,8 +262,6 @@ static void sigbreak(void *uc)
 {
   /* let CPUEMU decide what to do, as it can kick in for any backend */
   e_gen_sigalrm();
-  if (!in_vm86 && config.cpu_vm_dpmi == CPUVM_NATIVE)
-    signative_sigbreak(uc);
 }
 
 /* this cleaning up is necessary to avoid the port server becoming
@@ -534,18 +531,11 @@ signal_pre_init(void)
   dosemu_pthread_self = pthread_self();
   dosemu_pid = getpid();
   rng_init(&cbks, MAX_CBKS, sizeof(struct callback_s));
-
-  if (config.cpu_vm_dpmi == CPUVM_NATIVE)
-    signative_pre_init();
 }
 
 void
 signal_init(void)
 {
-  /* signal_init is called after dpmi_setup so this check is safe */
-  if (config.cpu_vm_dpmi == CPUVM_NATIVE)
-    signative_init();
-
   sh_tid = coopth_create("signal handling", signal_thr);
   /* normally we don't need ctx handlers because the thread is detached.
    * But some crazy code (vbe.c) can call coopth_attach() on it, so we
