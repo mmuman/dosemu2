@@ -151,6 +151,8 @@ static int need_sas_wa;
 static int need_sr_wa;
 #endif
 
+static void signative_pre_init(void);
+
 #if SIGRETURN_WA
 static unsigned int *iret_frame;
 
@@ -782,6 +784,7 @@ unk_err:
 
 void signative_init(void)
 {
+  signative_pre_init();
   sigstack_init();
 #if SIGRETURN_WA
   /* 4.6+ are able to correctly restore SS */
@@ -859,7 +862,7 @@ static void signal_sas_wa(void)
 }
 #endif
 
-void signative_pre_init(void)
+static void signative_pre_init(void)
 {
   /* initialize user data & code selector values (used by DPMI code) */
   /* And save %fs, %gs for NPTL */

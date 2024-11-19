@@ -192,12 +192,8 @@ extern sigset_t all_sigmask;
 extern int sig_threads_wa;
 
 #ifdef DNATIVE
-void signative_init(void);
-void signative_pre_init(void);
 void signative_sigbreak(void *uc);
 #else
-static inline void signative_init(void) {}
-static inline void signative_pre_init(void) {}
 static inline void signative_sigbreak(void *uc) {}
 #endif
 

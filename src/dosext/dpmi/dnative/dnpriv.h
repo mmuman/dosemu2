@@ -16,5 +16,6 @@ void signal_set_altstack(int on);
 void unsetsig(int sig);
 void signative_start(void);
 void signative_stop(void);
+void signative_init(void);
 
 #endif

@@ -534,18 +534,11 @@ signal_pre_init(void)
   dosemu_pthread_self = pthread_self();
   dosemu_pid = getpid();
   rng_init(&cbks, MAX_CBKS, sizeof(struct callback_s));
-
-  if (config.cpu_vm_dpmi == CPUVM_NATIVE)
-    signative_pre_init();
 }
 
 void
 signal_init(void)
 {
-  /* signal_init is called after dpmi_setup so this check is safe */
-  if (config.cpu_vm_dpmi == CPUVM_NATIVE)
-    signative_init();
-
   sh_tid = coopth_create("signal handling", signal_thr);
   /* normally we don't need ctx handlers because the thread is detached.
    * But some crazy code (vbe.c) can call coopth_attach() on it, so we

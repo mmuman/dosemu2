@@ -291,6 +291,7 @@ static void dpmi_thr(void *arg)
 
 int native_dpmi_setup(void)
 {
+    signative_init();
     co_handle = co_thread_init(PCL_C_MC);
     return 0;
 }
