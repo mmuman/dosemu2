@@ -177,7 +177,6 @@ extern int sigchld_enable_handler(pid_t pid, int on);
 extern int sigalrm_register_handler(void (*handler)(void));
 extern void registersig(int sig, void (*handler)(siginfo_t *));
 extern void registersig_std(int sig, void (*handler)(void *));
-extern void deinit_handler(sigcontext_t *scp, unsigned long *uc_flags);
 
 void signal_block_async_nosig(sigset_t *old_mask);
 void signal_unblock_fatal_sigs(void);
@@ -193,29 +192,13 @@ extern sigset_t all_sigmask;
 extern int sig_threads_wa;
 
 #ifdef DNATIVE
-void signal_switch_to_dosemu(void);
-void signal_switch_to_dpmi(void);
-void signal_return_to_dosemu(void);
-void signal_return_to_dpmi(void);
-void signal_set_altstack(int on);
 void signative_init(void);
 void signative_pre_init(void);
 void signative_sigbreak(void *uc);
-void signative_start(void);
-void signative_stop(void);
-void unsetsig(int sig);
 #else
-static inline void signal_switch_to_dosemu(void) {}
-static inline void signal_switch_to_dpmi(void) {}
-static inline void signal_return_to_dosemu(void) {}
-static inline void signal_return_to_dpmi(void) {}
-static inline void signal_set_altstack(int on) {}
 static inline void signative_init(void) {}
 static inline void signative_pre_init(void) {}
 static inline void signative_sigbreak(void *uc) {}
-static inline void signative_start(void) {}
-static inline void signative_stop(void) {}
-static inline void unsetsig(int sig) {}
 #endif
 
 /* On glibc SIGRTMAX is not a constant but NSIG covers rt signals.
