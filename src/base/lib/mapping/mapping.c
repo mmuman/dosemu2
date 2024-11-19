@@ -812,6 +812,8 @@ void register_hardware_ram_virtual2(int type, unsigned base, unsigned int size,
     int cap = MAPPING_INIT_LOWRAM;
     if (type == 'L')
       cap |= MAPPING_LOWMEM;
+    if (base + size > ALIAS_SIZE)
+      cap |= MAPPING_EXTMEM;
     mmap_kvm(cap, base, size, uaddr, va, prot);
   }
 }
