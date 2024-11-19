@@ -150,8 +150,9 @@ static int need_sas_wa;
 #if SIGRETURN_WA
 static int need_sr_wa;
 #endif
-
+static void (*asighandlers[SIGMAX])(void *arg);
 static void signative_pre_init(void);
+static void signative_sigbreak(void *uc);
 
 #if SIGRETURN_WA
 static unsigned int *iret_frame;
@@ -786,6 +787,14 @@ void signative_init(void)
 {
   signative_pre_init();
   sigstack_init();
+  asighandlers[SIGALRM] = signative_sigbreak;
+  /* SIGIO is only used for irqs from vm86 */
+  if (config.cpu_vm == CPUVM_VM86)
+    asighandlers[SIGIO] = signative_sigbreak;
+  asighandlers[SIG_THREAD_NOTIFY] = signative_sigbreak;
+  asighandlers[SIGQUIT] = signative_sigbreak;
+  asighandlers[SIGINT] = signative_sigbreak;
+  asighandlers[SIGHUP] = signative_sigbreak;
 #if SIGRETURN_WA
   /* 4.6+ are able to correctly restore SS */
 #ifdef __linux__
@@ -1031,11 +1040,11 @@ static void init_handler(sigcontext_t *scp, unsigned long uc_flags)
   signal_unblock_fatal_sigs();
 }
 
-void signative_sigbreak(void *uc)
+static void signative_sigbreak(void *uc)
 {
   ucontext_t *uct = uc;
   sigcontext_t *scp = &uct->uc_mcontext;
-  if (DPMIValidSelector(_scp_cs))
+  if (!in_vm86 && DPMIValidSelector(_scp_cs))
     dpmi_return(scp, DPMI_RET_DOSEMU);
 }
 
@@ -1085,6 +1094,10 @@ __attribute__((noinline))
 static void fixup_handler0(int sig, siginfo_t *si, void *uc)
 {
 	struct sigaction *sa = &sacts[sig];
+	void (*sh)(void *) = asighandlers[sig];
+
+	if (sh)
+		sh(uc);
 	if (sa->sa_flags & SA_SIGINFO) {
 		sa->sa_sigaction(sig, si, uc);
 	} else {

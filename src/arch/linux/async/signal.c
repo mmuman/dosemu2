@@ -34,7 +34,6 @@
 #include "lowmem.h"
 #include "coopth.h"
 #include "emudpmi.h"
-#include "dnative.h"
 #include "pic.h"
 #include "ipx.h"
 #include "pktdrvr.h"
@@ -263,8 +262,6 @@ static void sigbreak(void *uc)
 {
   /* let CPUEMU decide what to do, as it can kick in for any backend */
   e_gen_sigalrm();
-  if (!in_vm86 && config.cpu_vm_dpmi == CPUVM_NATIVE)
-    signative_sigbreak(uc);
 }
 
 /* this cleaning up is necessary to avoid the port server becoming

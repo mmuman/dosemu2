@@ -191,12 +191,6 @@ extern sigset_t nonfatal_q_mask;
 extern sigset_t all_sigmask;
 extern int sig_threads_wa;
 
-#ifdef DNATIVE
-void signative_sigbreak(void *uc);
-#else
-static inline void signative_sigbreak(void *uc) {}
-#endif
-
 /* On glibc SIGRTMAX is not a constant but NSIG covers rt signals.
  * On bsd its all the other way around. */
 #if defined(__GLIBC__) || !defined(SIGRTMAX)
