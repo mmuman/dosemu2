@@ -55,7 +55,7 @@
 #ifdef HAVE_LINUX_SIGNAL_H
 #include <linux/signal.h>
 #endif
-#if defined(DNATIVE) && defined(MCONTEXT)
+#if defined(MCONTEXT)
 #define SIGALTSTACK_WA_DEFAULT 1
 #else
 #define SIGALTSTACK_WA_DEFAULT 0
@@ -95,7 +95,7 @@
 #include <asm/ucontext.h>
 #endif
 #ifdef __x86_64__
-  #define SIGRETURN_WA_DEFAULT DNATIVE
+  #define SIGRETURN_WA_DEFAULT 1
 #else
   #define SIGRETURN_WA_DEFAULT 0
 #endif

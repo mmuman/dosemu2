@@ -412,7 +412,8 @@ static void rsp_init(void)
     rsp16 = get_pm_handler(MSDOS_RSP_CALL16, do_start16, NULL);
     rsp32 = get_pm_handler(MSDOS_RSP_CALL32, do_start32, NULL);
     err = GetDescriptor(rsp16.selector, (unsigned *)rsp.code16);
-    assert(!err);
+    if (err)
+        return;
     rsp.ip = rsp16.offset;
     err = GetDescriptor(rsp32.selector, (unsigned *)rsp.code32);
     assert(!err);
