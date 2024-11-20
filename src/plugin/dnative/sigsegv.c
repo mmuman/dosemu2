@@ -915,6 +915,7 @@ static void __init_handler(sigcontext_t *scp, unsigned long uc_flags)
     _scp_ss = getsegment(ss);
   _scp_fs = getsegment(fs);
   _scp_gs = getsegment(gs);
+#if 0
   if (_scp_cs == 0) {
       if (config.dpmi
 #ifdef X86_EMULATOR
@@ -939,6 +940,7 @@ static void __init_handler(sigcontext_t *scp, unsigned long uc_flags)
       leavedos_sig(45);
 #endif
   }
+#endif
 #endif
 
   signative_enter(scp);
