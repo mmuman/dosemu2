@@ -17,9 +17,38 @@
 #include "dosemu_debug.h"
 #include "plugin_config.h"
 #include "utilities.h"
+#include "emudpmi.h"
 #include "dnative.h"
 
 static const struct dnative_ops *dnops;
+
+static void check_ldt(void)
+{
+    int ret;
+    int i;
+    uint8_t buffer[LDT_ENTRIES * LDT_ENTRY_SIZE];
+    unsigned int base_addr, limit, *lp;
+    int type, np;
+
+    ret = dnops->modify_ldt(LDT_READ, buffer, sizeof(buffer));
+    /* may return 0 if no LDT */
+    if (ret == sizeof(buffer)) {
+        for (i = 0; i < MAX_SELECTORS; i++) {
+            lp = (unsigned int *)&buffer[i * LDT_ENTRY_SIZE];
+            base_addr = (*lp >> 16) & 0x0000FFFF;
+            limit = *lp & 0x0000FFFF;
+            lp++;
+            base_addr |= (*lp & 0xFF000000) | ((*lp << 16) & 0x00FF0000);
+            limit |= (*lp & 0x000F0000);
+            type = (*lp >> 10) & 3;
+            np = ((*lp >> 15) & 1) ^ 1;
+            if (!np) {
+                D_printf("LDT entry 0x%x used: b=0x%x l=0x%x t=%i\n",i,base_addr,limit,type);
+                segment_set_user(i, 0xfe);
+            }
+        }
+    }
+}
 
 int native_dpmi_setup(void)
 {
@@ -31,6 +60,7 @@ int native_dpmi_setup(void)
         error("Native DPMI not compiled in\n");
         return -1;
     }
+    check_ldt();
     return dnops->setup();
 }
 

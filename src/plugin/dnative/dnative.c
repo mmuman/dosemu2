@@ -297,34 +297,8 @@ static void dpmi_thr(void *arg)
 
 static int _setup(void)
 {
-    int ret;
-    int i;
-    uint8_t buffer[LDT_ENTRIES * LDT_ENTRY_SIZE];
-    unsigned int base_addr, limit, *lp;
-    int type, np;
-
-    ret = _modify_ldt(LDT_READ, buffer, sizeof(buffer));
-    /* may return 0 if no LDT */
-    if (ret == sizeof(buffer)) {
-        for (i = 0; i < MAX_SELECTORS; i++) {
-            lp = (unsigned int *)&ldt_buffer[i * LDT_ENTRY_SIZE];
-            base_addr = (*lp >> 16) & 0x0000FFFF;
-            limit = *lp & 0x0000FFFF;
-            lp++;
-            base_addr |= (*lp & 0xFF000000) | ((*lp << 16) & 0x00FF0000);
-            limit |= (*lp & 0x000F0000);
-            type = (*lp >> 10) & 3;
-            np = ((*lp >> 15) & 1) ^ 1;
-            if (!np) {
-                D_printf("LDT entry 0x%x used: b=0x%x l=0x%x t=%i\n",i,base_addr,limit,type);
-                segment_set_user(i, 0xfe);
-            }
-        }
-    }
-
     signative_init();
     co_handle = co_thread_init(PCL_C_MC);
-
     return 0;
 }
 
