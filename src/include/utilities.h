@@ -48,6 +48,9 @@ int handle_timeout(uint16_t to,
     enum CbkRet (*cbk)(int, void *, int, int *),
     int arg, void *arg2, int arg3, int *r_err);
 
+int send_fd(int usock, int fd_tx);
+int recv_fd(int sock);
+
 #define _min(x,y) ({ \
 	typeof(x) _x = (x);	\
 	typeof(y) _y = (y);	\

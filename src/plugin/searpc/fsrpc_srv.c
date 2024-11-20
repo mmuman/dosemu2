@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 #include <searpc-server.h>
 #include <searpc-utils.h>
+#include "utilities.h"
 #include "searpc-signature.h"
 #include "searpc-marshal.h"
 #include "test-object.h"
@@ -91,37 +92,6 @@ static int seal_1_svc(void)
     ASSERT0(!sealed);
     sealed = 1;
     return num_paths;
-}
-
-static int send_fd(int usock, int fd_tx)
-{
-    union {
-        char buf[CMSG_SPACE(sizeof(fd_tx))];
-        struct cmsghdr _align;
-    } cmsg_tx = {};
-    char data_tx = '.';
-    struct iovec io = {
-        .iov_base = &data_tx,
-        .iov_len = sizeof(data_tx),
-    };
-    struct msghdr msg = {
-        .msg_iov = &io,
-        .msg_iovlen = 1,
-        .msg_control = &cmsg_tx.buf,
-        .msg_controllen = sizeof(cmsg_tx.buf),
-    };
-    struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
-
-    cmsg->cmsg_len = CMSG_LEN(sizeof(fd_tx));
-    cmsg->cmsg_level = SOL_SOCKET;
-    cmsg->cmsg_type = SCM_RIGHTS;
-    memcpy(CMSG_DATA(cmsg), &fd_tx, sizeof(fd_tx));
-
-    if (sendmsg(usock, &msg, 0) < 0) {
-        perror("sendmsg()");
-        return -1;
-    }
-    return 0;
 }
 
 #define CHK(x) do { if (!(x)) return FALSE; } while(0)

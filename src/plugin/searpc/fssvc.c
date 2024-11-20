@@ -137,41 +137,6 @@ err0:
     return -1;
 }
 
-static int recv_fd(int sock)
-{
-    struct msghdr msg;
-    struct cmsghdr *cmsghdr;
-    struct iovec iov;
-    ssize_t nbytes;
-    int *p;
-    char buf[CMSG_SPACE(sizeof(int))], c[16];
-    struct cmsghdr *cmsgp;
-
-    iov.iov_base = &c;
-    iov.iov_len = sizeof(c);
-    cmsghdr = (struct cmsghdr *)buf;
-    cmsghdr->cmsg_len = CMSG_LEN(sizeof(int));
-    cmsghdr->cmsg_level = SOL_SOCKET;
-    cmsghdr->cmsg_type = SCM_RIGHTS;
-    msg.msg_name = NULL;
-    msg.msg_namelen = 0;
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-    msg.msg_control = cmsghdr;
-    msg.msg_controllen = CMSG_LEN(sizeof(int));
-    msg.msg_flags = 0;
-
-    nbytes = recvmsg(sock, &msg, 0);
-    if (nbytes == -1)
-        return -1;
-
-    cmsgp = CMSG_FIRSTHDR(&msg);
-    p = (int *)CMSG_DATA(cmsgp);
-    if (!p)
-        return -1;
-    return *p;
-}
-
 static void bad_rpc(const char *func, const char *msg)
 {
     fprintf(stderr, "RPC failure: %s: %s\n", func, msg);

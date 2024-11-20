@@ -13,6 +13,7 @@
 #include <libgen.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 #include <fcntl.h>
 #include <string.h>
 #include <ctype.h>
@@ -1339,4 +1340,70 @@ int handle_timeout(uint16_t to,
     if (cbr != CBK_DONE)
         return 1;
     return 0;
+}
+
+int send_fd(int usock, int fd_tx)
+{
+    union {
+        char buf[CMSG_SPACE(sizeof(fd_tx))];
+        struct cmsghdr _align;
+    } cmsg_tx = {};
+    char data_tx = '.';
+    struct iovec io = {
+        .iov_base = &data_tx,
+        .iov_len = sizeof(data_tx),
+    };
+    struct msghdr msg = {
+        .msg_iov = &io,
+        .msg_iovlen = 1,
+        .msg_control = &cmsg_tx.buf,
+        .msg_controllen = sizeof(cmsg_tx.buf),
+    };
+    struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+
+    cmsg->cmsg_len = CMSG_LEN(sizeof(fd_tx));
+    cmsg->cmsg_level = SOL_SOCKET;
+    cmsg->cmsg_type = SCM_RIGHTS;
+    memcpy(CMSG_DATA(cmsg), &fd_tx, sizeof(fd_tx));
+
+    if (sendmsg(usock, &msg, 0) < 0) {
+        perror("sendmsg()");
+        return -1;
+    }
+    return 0;
+}
+
+int recv_fd(int sock)
+{
+    struct msghdr msg;
+    struct cmsghdr *cmsghdr;
+    struct iovec iov;
+    ssize_t nbytes;
+    int *p;
+    char buf[CMSG_SPACE(sizeof(int))], c[16];
+    struct cmsghdr *cmsgp;
+
+    iov.iov_base = &c;
+    iov.iov_len = sizeof(c);
+    cmsghdr = (struct cmsghdr *)buf;
+    cmsghdr->cmsg_len = CMSG_LEN(sizeof(int));
+    cmsghdr->cmsg_level = SOL_SOCKET;
+    cmsghdr->cmsg_type = SCM_RIGHTS;
+    msg.msg_name = NULL;
+    msg.msg_namelen = 0;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+    msg.msg_control = cmsghdr;
+    msg.msg_controllen = CMSG_LEN(sizeof(int));
+    msg.msg_flags = 0;
+
+    nbytes = recvmsg(sock, &msg, 0);
+    if (nbytes == -1)
+        return -1;
+
+    cmsgp = CMSG_FIRSTHDR(&msg);
+    p = (int *)CMSG_DATA(cmsgp);
+    if (!p)
+        return -1;
+    return *p;
 }
