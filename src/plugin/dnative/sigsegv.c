@@ -40,14 +40,11 @@
 
 #include "emu.h"
 #include "utilities.h"
-#include "int.h"
 
 #include "video.h"
-#include "vgaemu.h" /* root@zaphod */
 
 #include "emudpmi.h"
 #include "dnpriv.h"
-#include "cpu-emu.h"
 #include "dosemu_config.h"
 #include "sig.h"
 
@@ -290,44 +287,19 @@ static void dosemu_fault1(int signum, sigcontext_t *scp, const siginfo_t *si)
       error("BUG: Fault handler re-entered not within dosemu code! in_vm86=%i\n",
         in_vm86);
     }
-    goto bad;
-  }
-#ifdef __x86_64__
-  if (_scp_trapno == 0x0e && _scp_cr2 > 0xffffffff)
-  {
-#ifdef X86_EMULATOR
-    if (IS_EMU_JIT() && e_in_compiled_code()) {
-      int i;
-      /* dosemu_error() will SIGSEGV in backtrace(). */
-      error("JIT fault accessing invalid address 0x%08"PRI_RG", "
-          "RIP=0x%08"PRI_RG"\n", _scp_cr2, _scp_rip);
-      if (mapping_find_hole(_scp_rip, _scp_rip + 64, 1) == MAP_FAILED) {
-        error("@Generated code dump:\n");
-        for (i = 0; i < 64; i++) {
-          error("@ %02x", *(unsigned char *)(_scp_rip + i));
-          if ((i & 15) == 15)
-            error("@\n");
-        }
-      }
-      goto bad;
-    }
-#endif
-    dosemu_error("Accessing invalid address 0x%08"PRI_RG"\n", _scp_cr2);
-    goto bad;
-  }
-#endif
+    siginfo_debug(si);
 
-
-#ifdef __i386__
-  /* case 1: note that _scp_cr2 must be 0-based */
-  if (in_vm86 && config.cpu_vm == CPUVM_VM86) {
-    true_vm86_fault(scp);
+    if (DPMIValidSelector(_scp_cs))
+      print_exception_info(scp);
+    if (in_vm86)
+       show_regs();
+    fatalerr = 4;
+    _leavedos_main(0, signum);         /* shouldn't return */
     return;
   }
-#endif
 
   /* case 2: At first let's find out where we came from */
-  if (DPMIValidSelector(_scp_cs)) {
+  if (!in_vm86 && DPMIValidSelector(_scp_cs)) {
     int ret = DPMI_RET_FAULT;
     assert(config.cpu_vm_dpmi == CPUVM_NATIVE);
     if (_scp_trapno == 0x10) {
@@ -346,31 +318,7 @@ static void dosemu_fault1(int signum, sigcontext_t *scp, const siginfo_t *si)
     return;
   }
 
-#ifdef X86_EMULATOR
-  /* case 3 */
-  if (IS_EMU_JIT() && e_emu_fault(scp, in_vm86))
-    return;
-#endif
-
-  /* case 4 */
-  error("Fault in dosemu code, in_dpmi=%i\n", dpmi_active());
-  /* TODO - we can start gdb here */
-  /* start_gdb() */
-  /* Going to die from here */
-
-bad:
-/* All recovery attempts failed, going to die :( */
-
-  {
-    siginfo_debug(si);
-
-    if (DPMIValidSelector(_scp_cs))
-      print_exception_info(scp);
-    if (in_vm86)
-	show_regs();
-    fatalerr = 4;
-    _leavedos_main(0, signum);		/* shouldn't return */
-  }
+  handle_fault(signum, si, scp);
 }
 
 /* noinline is to prevent gcc from moving TLS access around init_handler() */
@@ -967,6 +915,7 @@ static void __init_handler(sigcontext_t *scp, unsigned long uc_flags)
     _scp_ss = getsegment(ss);
   _scp_fs = getsegment(fs);
   _scp_gs = getsegment(gs);
+#if 0
   if (_scp_cs == 0) {
       if (config.dpmi
 #ifdef X86_EMULATOR
@@ -991,6 +940,7 @@ static void __init_handler(sigcontext_t *scp, unsigned long uc_flags)
       leavedos_sig(45);
 #endif
   }
+#endif
 #endif
 
   signative_enter(scp);

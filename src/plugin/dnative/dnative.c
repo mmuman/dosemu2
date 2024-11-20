@@ -31,10 +31,6 @@
 #include "cpu.h"
 #include "dosemu_debug.h"
 #include "utilities.h"
-#include "emu.h"
-#include "vgaemu.h"
-#include "cpu-emu.h"
-#include "mapping.h"
 #include "emudpmi.h"
 #include "dnative.h"
 #include "dnpriv.h"
@@ -46,6 +42,7 @@ static int dpmi_ret_val;
 static sigcontext_t emu_stack_frame;
 static int in_dpmi_thr;
 static int dpmi_thr_running;
+static cpuctx_t *dpmi_scp;
 
 static int _modify_ldt(int func, void *ptr, unsigned long bytecount);
 
@@ -168,27 +165,6 @@ static void copy_to_emu(cpuctx_t *d, sigcontext_t *scp)
 
 static void dpmi_thr(void *arg);
 
-static int handle_pf(cpuctx_t *scp)
-{
-    int rc;
-    dosaddr_t cr2 = _cr2;
-#ifdef X86_EMULATOR
-#ifdef HOST_ARCH_X86
-    /* DPMI code touches cpuemu prot */
-    if (IS_EMU_JIT() && e_invalidate_page_full(cr2))
-        return DPMI_RET_CLIENT;
-#endif
-#endif
-    signal_unblock_async_sigs();
-    rc = vga_emu_fault(cr2, _err, scp);
-    /* going for dpmi_fault() or deinit_handler(),
-     * careful with async signals and sas_wa */
-    signal_restore_async_sigs();
-    if (rc == True)
-        return DPMI_RET_CLIENT;
-    return DPMI_RET_FAULT;
-}
-
 /* ======================================================================== */
 /*
  * DANG_BEGIN_FUNCTION native_dpmi_control
@@ -203,12 +179,16 @@ static int _control(cpuctx_t *scp)
 {
     unsigned saved_IF = (_eflags & IF);
 
+    dpmi_scp = scp;
+
     _eflags = get_EFLAGS(_eflags);
-    if (in_dpmi_thr)
+    if (in_dpmi_thr) {
+        /* if we are going directly to a sighandler, mask async signals. */
+        signal_restore_async_sigs();
         signal_switch_to_dpmi();
-    else
-        dpmi_tid =
-            co_create(co_handle, dpmi_thr, NULL, NULL, SIGSTACK_SIZE);
+    } else {
+        dpmi_tid = co_create(co_handle, dpmi_thr, NULL, NULL, SIGSTACK_SIZE);
+    }
     dpmi_thr_running++;
     co_call(dpmi_tid);
     dpmi_thr_running--;
@@ -218,10 +198,8 @@ static int _control(cpuctx_t *scp)
     if (!saved_IF)
         _eflags &= ~IF;
     _eflags &= ~VIF;
-    if (dpmi_ret_val == DPMI_RET_FAULT && _trapno == 0x0e)
-        dpmi_ret_val = handle_pf(scp);
-    /* we may return here with sighandler's signal mask.
-     * This is done for speed-up. dpmi_control() restores the mask. */
+
+    signal_unblock_async_sigs();
     return dpmi_ret_val;
 }
 
@@ -232,7 +210,7 @@ static int _dpmi_exit(cpuctx_t *scp)
         return DPMI_RET_DOSEMU;
     D_printf("DPMI: leaving\n");
     dpmi_ret_val = DPMI_RET_EXIT;
-    ret = native_dpmi_control(scp);
+    ret = _control(scp);
     if (in_dpmi_thr)
         error("DPMI thread have not terminated properly\n");
     return ret;
@@ -250,7 +228,7 @@ void dpmi_return(sigcontext_t *scp, int retcode)
         copy_context(scp, &emu_stack_frame);
         return;
     }
-    copy_to_emu(dpmi_get_scp(), scp);
+    copy_to_emu(dpmi_scp, scp);
     /* signal handlers start with clean FPU state, but we unmask
        overflow/division by zero in main code */
     fesetenv(&dosemu_fenv);
@@ -260,7 +238,7 @@ void dpmi_return(sigcontext_t *scp, int retcode)
     if (dpmi_ret_val == DPMI_RET_EXIT)
         copy_context(scp, &emu_stack_frame);
     else
-        copy_to_dpmi(scp, dpmi_get_scp());
+        copy_to_dpmi(scp, dpmi_scp);
 }
 
 void dpmi_switch_sa(int sig, siginfo_t * inf, void *uc)
@@ -268,7 +246,7 @@ void dpmi_switch_sa(int sig, siginfo_t * inf, void *uc)
     ucontext_t *uct = uc;
     sigcontext_t *scp = &uct->uc_mcontext;
     copy_context(&emu_stack_frame, scp);
-    copy_to_dpmi(scp, dpmi_get_scp());
+    copy_to_dpmi(scp, dpmi_scp);
     unsetsig(DPMI_TMP_SIG);
     deinit_handler(scp, &uct->uc_flags);
 }
@@ -297,34 +275,8 @@ static void dpmi_thr(void *arg)
 
 static int _setup(void)
 {
-    int ret;
-    int i;
-    uint8_t buffer[LDT_ENTRIES * LDT_ENTRY_SIZE];
-    unsigned int base_addr, limit, *lp;
-    int type, np;
-
-    ret = _modify_ldt(LDT_READ, buffer, sizeof(buffer));
-    /* may return 0 if no LDT */
-    if (ret == sizeof(buffer)) {
-        for (i = 0; i < MAX_SELECTORS; i++) {
-            lp = (unsigned int *)&ldt_buffer[i * LDT_ENTRY_SIZE];
-            base_addr = (*lp >> 16) & 0x0000FFFF;
-            limit = *lp & 0x0000FFFF;
-            lp++;
-            base_addr |= (*lp & 0xFF000000) | ((*lp << 16) & 0x00FF0000);
-            limit |= (*lp & 0x000F0000);
-            type = (*lp >> 10) & 3;
-            np = ((*lp >> 15) & 1) ^ 1;
-            if (!np) {
-                D_printf("LDT entry 0x%x used: b=0x%x l=0x%x t=%i\n",i,base_addr,limit,type);
-                segment_set_user(i, 0xfe);
-            }
-        }
-    }
-
     signative_init();
     co_handle = co_thread_init(PCL_C_MC);
-
     return 0;
 }
 
@@ -333,19 +285,6 @@ static void _done(void)
     if (in_dpmi_thr && !dpmi_thr_running)
         co_delete(dpmi_tid);
     co_thread_cleanup(co_handle);
-}
-
-static void _enter(void)
-{
-    /* if we are going directly to a sighandler, mask async signals. */
-    if (in_dpmi_thr)
-        signal_restore_async_sigs();
-}
-
-static void _leave(void)
-{
-    /* for speed-up, DPMI switching corrupts signal mask. Fix it here. */
-    signal_unblock_async_sigs();
 }
 
 static int _modify_ldt(int func, void *ptr, unsigned long bytecount)
@@ -469,8 +408,6 @@ static const struct dnative_ops ops = {
   .exit = _dpmi_exit,
   .setup = _setup,
   .done = _done,
-  .enter = _enter,
-  .leave = _leave,
   .modify_ldt = _modify_ldt,
   .check_verr = _check_verr,
   .debug_breakpoint = _debug_breakpoint,

@@ -183,6 +183,7 @@ void signal_unblock_fatal_sigs(void);
 void signal_unblock_async_sigs(void);
 void signal_restore_async_sigs(void);
 void leavedos_sig(int sig);
+void handle_fault(int sig, const siginfo_t *si, sigcontext_t *scp);
 
 extern pthread_t dosemu_pthread_self;
 extern pid_t dosemu_pid;

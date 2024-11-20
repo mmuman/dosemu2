@@ -643,7 +643,7 @@ static void dpmi_pic_run(cpuctx_t *scp)
   do_pm_int(scp, inum);
 }
 
-static int _dpmi_control(void)
+static int dpmi_control(void)
 {
     int ret;
     cpuctx_t *scp = &DPMI_CLIENT.stack_frame;
@@ -699,18 +699,6 @@ static int _dpmi_control(void)
       D_printf("DPMI: Return to dosemu at %04x:%08x, Stack 0x%x:0x%08x, flags=%#x\n",
             _cs, _eip, _ss, _esp, _eflags);
 
-    return ret;
-}
-
-static int dpmi_control(void)
-{
-    int ret;
-
-    if (config.cpu_vm_dpmi == CPUVM_NATIVE)
-        native_dpmi_enter();
-    ret = _dpmi_control();
-    if (config.cpu_vm_dpmi == CPUVM_NATIVE)
-        native_dpmi_leave();
     return ret;
 }
 
@@ -3771,8 +3759,6 @@ static void do_dpmi_int(cpuctx_t *scp, int i)
 	case 0x1680:	/* give up time slice */
 	  /* hackish impl because DPMI-1.0 spec requires that here.
 	   * The proper one (coopth-based) is in msdos.c. */
-	  if (config.cpu_vm_dpmi == CPUVM_NATIVE)
-	    signal_unblock_async_sigs();
 	  dosemu_sleep();
 	  _LO(ax) = 0;
 	  return;
