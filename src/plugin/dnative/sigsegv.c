@@ -289,31 +289,6 @@ static void dosemu_fault1(int signum, sigcontext_t *scp, const siginfo_t *si)
     }
     goto bad;
   }
-#ifdef __x86_64__
-  if (_scp_trapno == 0x0e && _scp_cr2 > 0xffffffff)
-  {
-#ifdef X86_EMULATOR
-    if (IS_EMU_JIT() && e_in_compiled_code()) {
-      int i;
-      /* dosemu_error() will SIGSEGV in backtrace(). */
-      error("JIT fault accessing invalid address 0x%08"PRI_RG", "
-          "RIP=0x%08"PRI_RG"\n", _scp_cr2, _scp_rip);
-      if (mapping_find_hole(_scp_rip, _scp_rip + 64, 1) == MAP_FAILED) {
-        error("@Generated code dump:\n");
-        for (i = 0; i < 64; i++) {
-          error("@ %02x", *(unsigned char *)(_scp_rip + i));
-          if ((i & 15) == 15)
-            error("@\n");
-        }
-      }
-      goto bad;
-    }
-#endif
-    dosemu_error("Accessing invalid address 0x%08"PRI_RG"\n", _scp_cr2);
-    goto bad;
-  }
-#endif
-
 
 #ifdef __i386__
   /* case 1: note that _scp_cr2 must be 0-based */
