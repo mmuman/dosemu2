@@ -324,14 +324,9 @@ static void abort_signal(int sig, siginfo_t *si, void *uc)
   _exit(sig);
 }
 
-SIG_PROTO_PFX
-static void minfault(int sig, siginfo_t *si, void *uc)
+void handle_fault(int sig, const siginfo_t *si, sigcontext_t *scp)
 {
 #ifdef HOST_ARCH_X86
-#if defined(__i386__) || defined(X86_EMULATOR)
-  ucontext_t *uct = uc;
-  sigcontext_t *scp = &uct->uc_mcontext;
-#endif
 #ifdef __i386__
   if (in_vm86 && config.cpu_vm == CPUVM_VM86) {
     true_vm86_fault(scp);
@@ -351,6 +346,14 @@ static void minfault(int sig, siginfo_t *si, void *uc)
   signal(sig, SIG_DFL);
   siginfo_debug(si);
   leavedos_from_sig(sig);
+}
+
+SIG_PROTO_PFX
+static void minfault(int sig, siginfo_t *si, void *uc)
+{
+  ucontext_t *uct = uc;
+  sigcontext_t *scp = &uct->uc_mcontext;
+  handle_fault(sig, si, scp);
 }
 
 /* Silly Interrupt Generator Initialization/Closedown */
