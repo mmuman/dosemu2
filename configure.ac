@@ -659,15 +659,6 @@ fi
 
 if test "$CONFIG_HOST" = "Linux"; then
   if test "$machine" = "i386" -o "$machine" = "x86_64"; then
-    AC_ARG_ENABLE(dnative, [AS_HELP_STRING([--disable-dnative],
-        [do NOT compile with native DPMI support])])
-    if test "$enable_dnative" != "no"; then
-      AC_MSG_NOTICE([Enabling native DPMI support...])
-      AC_DEFINE(DNATIVE)
-      DNATIVE=1
-      AC_SUBST(DNATIVE)
-    fi
-
     AC_DEFINE(USE_KVM)
     KVM=1
     AC_SUBST(KVM)
@@ -855,9 +846,6 @@ AH_TEMPLATE([X86_EMULATOR],
 
 AH_TEMPLATE([X86_JIT],
 [ Define this to use the X86 JIT ])
-
-AH_TEMPLATE([DNATIVE],
-[ Define this to enable native DPMI back-end ])
 
 AH_TEMPLATE([USE_KVM],
 [ Define this to enable kvm support ])

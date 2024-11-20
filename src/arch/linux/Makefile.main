@@ -36,10 +36,7 @@ ifeq ($(MCONTEXT),1)
 LIBMC = base/lib/mcontext
 endif
 
-DPMI = dosext/dpmi dosext/dpmi/msdos dosext/dpmi/doslib
-ifeq ($(DNATIVE),1)
-DPMI += dosext/dpmi/dnative
-endif
+DPMI = dosext/dpmi dosext/dpmi/msdos dosext/dpmi/doslib dosext/dpmi/dnative
 
 _LIBSUBDIRS=base/video base/dev/vga base/core base/kbd_unicode \
 	arch/linux/async base/lib/mapping $(LIBMC) \

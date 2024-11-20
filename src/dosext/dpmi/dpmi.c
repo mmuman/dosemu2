@@ -20,6 +20,9 @@ Currently missing DPMI-1.0 functions:
           is initially mapped into a 4Gb space, so 85434678 should be
           reverted. The extra complication is that this allows to map
           devices at 1Mb, like video memory and roms.
+Currently missing DPMI-0.9 functions:
+ - 0xb0[0123]
+          Debug watchpoints are not supported in KVM mode.
 */
 
 #include <stdio.h>
@@ -29,18 +32,11 @@ Currently missing DPMI-1.0 functions:
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include <errno.h>
 #include <assert.h>
-#include <sys/wait.h>
-#ifdef DNATIVE
-#include <sys/ptrace.h>
-#endif
 #ifdef __linux__
 #include <linux/version.h>
 #endif
 extern long int __sysconf (int); /* for Debian eglibc 2.13-3 */
-#include <sys/user.h>
-#include <sys/syscall.h>
 #include <Asm/ldt.h>
 #include "version.h"
 #include "emu.h"
@@ -106,7 +102,6 @@ static struct {
 #define segment_get(x, f) seg_meta[x].f
 #define segment_set(x, y, f) (seg_meta[x].f = (y))
 #define segment_user(x) segment_get(x, user)
-#define segment_set_user(x, y) segment_set(x, y, user)
 static int in_dpmi;/* Set to 1 when running under DPMI */
 static int dpmi_pm;
 static int in_dpmi_irq;
@@ -250,14 +245,6 @@ static int dpmi_not_supported;
 static void quit_dpmi(cpuctx_t *scp, unsigned short errcode,
     int tsr, unsigned short tsr_para, int dos_exit);
 
-#ifdef DNATIVE
-#define modify_ldt dosemu_modify_ldt
-static inline int modify_ldt(int func, void *ptr, unsigned long bytecount)
-{
-  return syscall(SYS_modify_ldt, func, ptr, bytecount);
-}
-#endif
-
 static void print_thr(void *arg)
 {
   com_doswritecon(arg, strlen(arg));
@@ -371,12 +358,11 @@ void *SEL_ADR_CLNT(unsigned short sel, unsigned int reg, int is_32)
 
 int get_ldt(void *buffer, int len)
 {
-#ifdef DNATIVE
   int i, ret;
   struct ldt_descriptor *dp;
   if (config.cpu_vm_dpmi != CPUVM_NATIVE)
 	return emu_modify_ldt(LDT_READ, buffer, len);
-  ret = modify_ldt(LDT_READ, buffer, len);
+  ret = native_modify_ldt(LDT_READ, buffer, len);
   /* do emu_modify_ldt even if modify_ldt fails, so cpu_vm_dpmi fallbacks can
      still work */
   if (ret != len)
@@ -389,16 +375,12 @@ int get_ldt(void *buffer, int len)
     }
   }
   return ret;
-#else
-  return emu_modify_ldt(LDT_READ, buffer, len);
-#endif
 }
 
 static int put_ldt(struct user_desc *ldt_info)
 {
   int __retval;
 
-#ifdef DNATIVE
   if (config.cpu_vm_dpmi == CPUVM_NATIVE)
   {
     /* NOTE: the real LDT in kernel space uses the real addresses, but
@@ -406,15 +388,14 @@ static int put_ldt(struct user_desc *ldt_info)
        has all base addresses with respect to mem_base */
     if (!ldt_info->seg_not_present) {
       ldt_info->base_addr += (uintptr_t)mem_base;
-      __retval = modify_ldt(LDT_WRITE, ldt_info, sizeof(*ldt_info));
+      __retval = native_modify_ldt(LDT_WRITE, ldt_info, sizeof(*ldt_info));
       ldt_info->base_addr -= (uintptr_t)mem_base;
     } else {
-      __retval = modify_ldt(LDT_WRITE, ldt_info, sizeof(*ldt_info));
+      __retval = native_modify_ldt(LDT_WRITE, ldt_info, sizeof(*ldt_info));
     }
     if (__retval)
       return __retval;
   }
-#endif
   /* this also updates our ldt_buffer */
   __retval = emu_modify_ldt(LDT_WRITE, ldt_info, sizeof(*ldt_info));
   return __retval;
@@ -971,21 +952,6 @@ int ValidAndUsedSelector(unsigned int selector)
   return DPMIValidSelector(selector) && segment_user(selector >> 3);
 }
 
-static inline int check_verr(unsigned short selector)
-{
-  int ret = 0;
-#ifdef DNATIVE
-  asm volatile(
-    "verrw %%ax\n"
-    "jz 1f\n"
-    "xorl %%eax, %%eax\n"
-    "1:\n"
-    : "=a"(ret)
-    : "a"(selector));
-#endif
-  return ret;
-}
-
 /*
 IF DS, ES, FS or GS is loaded with non-null selector;
 THEN
@@ -1025,7 +991,7 @@ static inline int CheckDataSelector(cpuctx_t *scp,
 #if 1
       /* Some buggy programs load the arbitrary LDT or even GDT
        * selectors after doing "verr" on them. We have to do the same. :( */
-      if (check_verr(selector)) {
+      if (config.cpu_vm_dpmi == CPUVM_NATIVE && native_check_verr(selector)) {
         error("... although verr succeeded, trying to continue\n");
         return 1;
       }
@@ -1946,29 +1912,9 @@ int DPMIGetPageAttributes(unsigned long handle, int offs, uint16_t attrs[], int 
 	handle, offs, attrs, count);
 }
 
-#ifdef DNATIVE
-static int get_dr(pid_t pid, int i, unsigned int *dri)
-{
-  *dri = ptrace(PTRACE_PEEKUSER, pid,
-		(void *)(offsetof(struct user, u_debugreg) + sizeof(int) * i), 0);
-  D_printf("DPMI: ptrace peek user dr%d=%x\n", i, *dri);
-  return *dri != -1 || errno == 0;
-}
-
-static int set_dr(pid_t pid, int i, unsigned long dri)
-{
-  int r = ptrace(PTRACE_POKEUSER, pid,
-		 (void *)(offsetof(struct user, u_debugreg) + sizeof(int) * i), (void *)dri);
-  D_printf("DPMI: ptrace poke user r=%d dr%d=%lx\n", r, i, dri);
-  return r == 0;
-}
-#endif
-
 static int dpmi_debug_breakpoint(int op, cpuctx_t *scp)
 {
-#ifdef DNATIVE
-  pid_t pid, vpid;
-  int err, r, status;
+  int err;
 
   if (debug_level('M'))
   {
@@ -2006,85 +1952,13 @@ static int dpmi_debug_breakpoint(int op, cpuctx_t *scp)
     return 0;
   }
 #endif
-
-  pid = getpid();
-  vpid = fork();
-  if (vpid == (pid_t)-1)
-    return err;
-  if (vpid == 0) {
-    unsigned int dr6, dr7;
-    /* child ptraces parent */
-    r = ptrace(PTRACE_ATTACH, pid, 0, 0);
-    D_printf("DPMI: ptrace attach %d op=%d\n", r, op);
-    if (r == -1)
-      _exit(err);
-    do {
-      r = waitpid(pid, &status, 0);
-    } while (r == pid && !WIFSTOPPED(status));
-    if (r == pid) switch (op) {
-      case 0: {   /* set */
-	int i;
-	if(get_dr(pid, 7, &dr7)) for (i=0; i<4; i++) {
-	  if ((~dr7 >> (i*2)) & 3) {
-	    unsigned mask;
-	    if (!set_dr(pid, i, (_LWORD_(ebx) << 16) | _LWORD_(ecx))) {
-	      err = 0x25;
-	      break;
-	    }
-	    dr7 |= (3 << (i*2));
-	    mask = _HI(dx) & 3; if (mask==2) mask++;
-	    mask |= ((_LO(dx)-1) << 2) & 0x0c;
-	    dr7 |= mask << (i*4 + 16);
-	    if (set_dr(pid, 7, dr7))
-	      err = i;
-	    break;
-	  }
-	}
-	break;
-      }
-      case 1:   /* clear */
-	if(get_dr(pid, 6, &dr6) && get_dr(pid, 7, &dr7)) {
-	  int i = _LWORD(ebx);
-	  dr6 &= ~(1 << i);
-	  dr7 &= ~(3 << (i*2));
-	  dr7 &= ~(15 << (i*4+16));
-	  if (set_dr(pid, 6, dr6) && set_dr(pid, 7, dr7))
-	    err = 0;
-	  break;
-	}
-      case 2:   /* get */
-	if(get_dr(pid, 6, &dr6))
-	  err = (dr6 >> _LWORD(ebx)) & 1;
-        break;
-      case 3:   /* reset */
-	if(get_dr(pid, 6, &dr6)) {
-          dr6 &= ~(1 << _LWORD(ebx));
-          if (set_dr(pid, 6, dr6))
-	    err = 0;
-	}
-        break;
-    }
-    ptrace(PTRACE_DETACH, pid, 0, 0);
-    D_printf("DPMI: ptrace detach\n");
-    _exit(err);
+  if (config.cpu_vm_dpmi == CPUVM_NATIVE) {
+    err = native_debug_breakpoint(op, scp, err);
+  } else {
+    error("debug breakpoints not implemented for KVM\n");
+    err = -1;
   }
-  D_printf("DPMI: waitpid start\n");
-  r = waitpid(vpid, &status, 0);
-  if (r != vpid || !WIFEXITED(status))
-    return err;
-  err = WEXITSTATUS(status);
-  if (err >= 0 && err < 4) {
-    if (op == 0)
-      _LWORD(ebx) = err;
-    else if (op == 2)
-      _LWORD(eax) = err;
-    err = 0;
-  }
-  D_printf("DPMI: waitpid end, err=%#x, op=%d\n", err, op);
   return err;
-#else
-  return -1;
-#endif
 }
 
 far_t DPMI_allocate_realmode_callback(u_short sel, int offs, u_short rm_sel,
@@ -4146,29 +4020,30 @@ void run_dpmi(void)
 
 void dpmi_setup(void)
 {
-    int i, type, np, err;
-    unsigned int base_addr, limit, *lp;
+    int err;
     dpmi_pm_block *block;
     unsigned short data_sel;
 
     if (!config.dpmi) return;
 
-    get_ldt(ldt_buffer, LDT_ENTRIES * LDT_ENTRY_SIZE);
     memset(seg_meta, 0, sizeof(seg_meta));
-    for (i = 0; i < MAX_SELECTORS; i++) {
-      lp = (unsigned int *)&ldt_buffer[i * LDT_ENTRY_SIZE];
-      base_addr = (*lp >> 16) & 0x0000FFFF;
-      limit = *lp & 0x0000FFFF;
-      lp++;
-      base_addr |= (*lp & 0xFF000000) | ((*lp << 16) & 0x00FF0000);
-      limit |= (*lp & 0x000F0000);
-      type = (*lp >> 10) & 3;
-      np = ((*lp >> 15) & 1) ^ 1;
-      if (!np) {
-        D_printf("LDT entry 0x%x used: b=0x%x l=0x%x t=%i\n",i,base_addr,limit,type);
-        segment_set_user(i, 0xfe);
-      }
+
+    switch (config.cpu_vm_dpmi) {
+    case CPUVM_KVM:
+      dbug_printf("Using DPMI inside KVM\n");
+      break;
+    case CPUVM_NATIVE:
+      dbug_printf("Using native DPMI control\n");
+      err = native_dpmi_setup();
+      if (err)
+        goto err;
+      break;
+    case CPUVM_EMU:
+      dbug_printf("Using DPMI with CPU emulator\n");
+      break;
     }
+
+    get_ldt(ldt_buffer, LDT_ENTRIES * LDT_ENTRY_SIZE);
 
     if (dpmi_alloc_pool()) {
 	leavedos(2);
@@ -4239,21 +4114,6 @@ void dpmi_setup(void)
 
     if (config.pm_dos_api)
       msdos_setup();
-
-    switch (config.cpu_vm_dpmi) {
-    case CPUVM_KVM:
-      dbug_printf("Using DPMI inside KVM\n");
-      break;
-    case CPUVM_NATIVE:
-      dbug_printf("Using native DPMI control\n");
-      err = native_dpmi_setup();
-      if (err)
-        goto err;
-      break;
-    case CPUVM_EMU:
-      dbug_printf("Using DPMI with CPU emulator\n");
-      break;
-    }
 
     prn_tid = coopth_create("dpmi print thr", print_thr);
 
@@ -6440,8 +6300,8 @@ void dpmi_done(void)
     DPMIfreeAll(&RSP_callbacks[i].pm_block_root);
   DPMIfreeAll(&host_pm_block_root);
   dpmi_free_pool();
-
-  native_dpmi_done();
+  if (config.cpu_vm_dpmi == CPUVM_NATIVE)
+    native_dpmi_done();
 }
 
 /* for debug only */
@@ -6613,4 +6473,9 @@ void dpmi_timer(void)
       dpmi_sti();
     }
   }
+}
+
+void segment_set_user(int ldt_entry, int client)
+{
+  segment_set(ldt_entry, client, user);
 }

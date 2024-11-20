@@ -36,13 +36,11 @@
 
 #define DPMI_private_paragraphs	((DPMI_rm_stacks * DPMI_rm_stack_size)>>4)
 					/* private data for DPMI server */
-
-#ifdef __linux__
-int modify_ldt(int func, void *ptr, unsigned long bytecount);
-#endif
 #define LDT_READ      0
 #define LDT_WRITE_OLD 1
 #define LDT_WRITE     0x11
+
+void segment_set_user(int ldt_entry, int client);
 
 /* this is used like: SEL_ADR(_ss, _esp) */
 void *SEL_ADR(unsigned short sel, unsigned int reg);
