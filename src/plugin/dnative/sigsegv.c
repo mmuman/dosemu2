@@ -353,7 +353,7 @@ static void dosemu_fault1(int signum, sigcontext_t *scp, const siginfo_t *si)
 #endif
 
   /* case 4 */
-  error("Fault in dosemu code, in_dpmi=%i\n", dpmi_active());
+  error("Fault in dosemu code\n");
   /* TODO - we can start gdb here */
   /* start_gdb() */
   /* Going to die from here */

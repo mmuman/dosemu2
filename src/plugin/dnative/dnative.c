@@ -232,7 +232,7 @@ static int _dpmi_exit(cpuctx_t *scp)
         return DPMI_RET_DOSEMU;
     D_printf("DPMI: leaving\n");
     dpmi_ret_val = DPMI_RET_EXIT;
-    ret = native_dpmi_control(scp);
+    ret = _control(scp);
     if (in_dpmi_thr)
         error("DPMI thread have not terminated properly\n");
     return ret;
