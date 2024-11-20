@@ -17,6 +17,9 @@
 #include "dosemu_debug.h"
 #include "plugin_config.h"
 #include "utilities.h"
+#include "vgaemu.h"
+#include "emu.h"
+#include "cpu-emu.h"
 #include "emudpmi.h"
 #include "dnative.h"
 
@@ -69,9 +72,33 @@ void native_dpmi_done(void)
     dnops->done();
 }
 
+static int handle_pf(cpuctx_t *scp)
+{
+    int rc;
+    dosaddr_t cr2 = _cr2;
+#ifdef X86_EMULATOR
+#ifdef HOST_ARCH_X86
+    /* DPMI code touches cpuemu prot */
+    if (IS_EMU_JIT() && e_invalidate_page_full(cr2))
+        return DPMI_RET_CLIENT;
+#endif
+#endif
+    signal_unblock_async_sigs();
+    rc = vga_emu_fault(cr2, _err, scp);
+    /* going for dpmi_fault() or deinit_handler(),
+     * careful with async signals and sas_wa */
+    signal_restore_async_sigs();
+    if (rc == True)
+        return DPMI_RET_CLIENT;
+    return DPMI_RET_FAULT;
+}
+
 int native_dpmi_control(cpuctx_t *scp)
 {
-    return dnops->control(scp);
+    int ret = dnops->control(scp);
+    if (ret == DPMI_RET_FAULT && _trapno == 0x0e)
+        ret = handle_pf(scp);
+    return ret;
 }
 
 int native_dpmi_exit(cpuctx_t *scp)

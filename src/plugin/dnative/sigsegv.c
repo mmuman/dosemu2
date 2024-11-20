@@ -40,14 +40,11 @@
 
 #include "emu.h"
 #include "utilities.h"
-#include "int.h"
 
 #include "video.h"
-#include "vgaemu.h" /* root@zaphod */
 
 #include "emudpmi.h"
 #include "dnpriv.h"
-#include "cpu-emu.h"
 #include "dosemu_config.h"
 #include "sig.h"
 
