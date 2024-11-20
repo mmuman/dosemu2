@@ -182,11 +182,13 @@ static int _control(cpuctx_t *scp)
     dpmi_scp = scp;
 
     _eflags = get_EFLAGS(_eflags);
-    if (in_dpmi_thr)
+    if (in_dpmi_thr) {
+        /* if we are going directly to a sighandler, mask async signals. */
+        signal_restore_async_sigs();
         signal_switch_to_dpmi();
-    else
-        dpmi_tid =
-            co_create(co_handle, dpmi_thr, NULL, NULL, SIGSTACK_SIZE);
+    } else {
+        dpmi_tid = co_create(co_handle, dpmi_thr, NULL, NULL, SIGSTACK_SIZE);
+    }
     dpmi_thr_running++;
     co_call(dpmi_tid);
     dpmi_thr_running--;
@@ -196,8 +198,8 @@ static int _control(cpuctx_t *scp)
     if (!saved_IF)
         _eflags &= ~IF;
     _eflags &= ~VIF;
-    /* we may return here with sighandler's signal mask.
-     * This is done for speed-up. dpmi_control() restores the mask. */
+
+    signal_unblock_async_sigs();
     return dpmi_ret_val;
 }
 
@@ -283,19 +285,6 @@ static void _done(void)
     if (in_dpmi_thr && !dpmi_thr_running)
         co_delete(dpmi_tid);
     co_thread_cleanup(co_handle);
-}
-
-static void _enter(void)
-{
-    /* if we are going directly to a sighandler, mask async signals. */
-    if (in_dpmi_thr)
-        signal_restore_async_sigs();
-}
-
-static void _leave(void)
-{
-    /* for speed-up, DPMI switching corrupts signal mask. Fix it here. */
-    signal_unblock_async_sigs();
 }
 
 static int _modify_ldt(int func, void *ptr, unsigned long bytecount)
@@ -419,8 +408,6 @@ static const struct dnative_ops ops = {
   .exit = _dpmi_exit,
   .setup = _setup,
   .done = _done,
-  .enter = _enter,
-  .leave = _leave,
   .modify_ldt = _modify_ldt,
   .check_verr = _check_verr,
   .debug_breakpoint = _debug_breakpoint,

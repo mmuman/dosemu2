@@ -83,11 +83,7 @@ static int handle_pf(cpuctx_t *scp)
         return DPMI_RET_CLIENT;
 #endif
 #endif
-    signal_unblock_async_sigs();
     rc = vga_emu_fault(cr2, _err, scp);
-    /* going for dpmi_fault() or deinit_handler(),
-     * careful with async signals and sas_wa */
-    signal_restore_async_sigs();
     if (rc == True)
         return DPMI_RET_CLIENT;
     return DPMI_RET_FAULT;
@@ -104,16 +100,6 @@ int native_dpmi_control(cpuctx_t *scp)
 int native_dpmi_exit(cpuctx_t *scp)
 {
     return dnops->exit(scp);
-}
-
-void native_dpmi_enter(void)
-{
-    dnops->enter();
-}
-
-void native_dpmi_leave(void)
-{
-    dnops->leave();
 }
 
 int native_modify_ldt(int func, void *ptr, unsigned long bytecount)
