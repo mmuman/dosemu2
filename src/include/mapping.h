@@ -64,39 +64,33 @@
 #define _MAP_32BIT 0
 #endif
 
-typedef int open_mapping_type(int cap);
-int open_mapping (int cap);
-
-typedef void close_mapping_type(int cap);
+int open_mapping(int cap);
 void close_mapping(int cap);
 
-typedef void *alloc_mapping_type(int cap, size_t mapsize, void *target);
-void *alloc_mapping (int cap, size_t mapsize);
-void *alloc_mapping_huge_page_aligned (int cap, size_t mapsize);
-
-typedef void free_mapping_type(int cap, void *addr, size_t mapsize);
-void free_mapping (int cap, void *addr, size_t mapsize);
-
-typedef void *resize_mapping_type(int cap, void *addr, size_t oldsize, size_t newsize);
-void *realloc_mapping (int cap, void *addr, size_t oldsize, size_t newsize);
-
+void *alloc_mapping(int cap, size_t mapsize);
+void *alloc_mapping_huge_page_aligned(int cap, size_t mapsize);
+void free_mapping(int cap, void *addr, size_t mapsize);
+void *realloc_mapping(int cap, void *addr, size_t oldsize, size_t newsize);
 void *mmap_mapping_huge_page_aligned(int cap, size_t mapsize, int protect);
 void *mmap_mapping(int cap, void *target, size_t mapsize, int protect);
-
-typedef void *alias_mapping_type(int cap, void *target, size_t mapsize, int protect, void *source);
 int alias_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect, void *source);
 int alias_mapping_pa(int cap, unsigned addr, size_t mapsize, int protect, void *source);
 int unalias_mapping_pa(int cap, unsigned addr, size_t mapsize);
 void *alias_mapping_ux(int cap, size_t mapsize, int protect, void *source);
 int alias_mapping_high(int cap, dosaddr_t targ, size_t mapsize, int protect,
     void *source);
-
 int munmap_mapping(int cap, dosaddr_t targ, size_t mapsize);
 int mprotect_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect);
 int restore_mapping(int cap, dosaddr_t targ, size_t mapsize);
-
 /* below wrapper is needed only for remoting the mapping subsystem */
 void *mmap_shm_ux(void *addr, size_t length, int prot, int fd);
+
+typedef int open_mapping_type(int cap);
+typedef void close_mapping_type(int cap);
+typedef void *alloc_mapping_type(int cap, size_t mapsize, void *target);
+typedef void free_mapping_type(int cap, void *addr, size_t mapsize);
+typedef void *resize_mapping_type(int cap, void *addr, size_t oldsize, size_t newsize);
+typedef void *alias_mapping_type(int cap, void *target, size_t mapsize, int protect, void *source);
 
 struct mappingdrivers {
   const char *key;
