@@ -46,6 +46,7 @@ static int dpmi_ret_val;
 static sigcontext_t emu_stack_frame;
 static int in_dpmi_thr;
 static int dpmi_thr_running;
+static cpuctx_t *dpmi_scp;
 
 static int _modify_ldt(int func, void *ptr, unsigned long bytecount);
 
@@ -203,6 +204,8 @@ static int _control(cpuctx_t *scp)
 {
     unsigned saved_IF = (_eflags & IF);
 
+    dpmi_scp = scp;
+
     _eflags = get_EFLAGS(_eflags);
     if (in_dpmi_thr)
         signal_switch_to_dpmi();
@@ -250,7 +253,7 @@ void dpmi_return(sigcontext_t *scp, int retcode)
         copy_context(scp, &emu_stack_frame);
         return;
     }
-    copy_to_emu(dpmi_get_scp(), scp);
+    copy_to_emu(dpmi_scp, scp);
     /* signal handlers start with clean FPU state, but we unmask
        overflow/division by zero in main code */
     fesetenv(&dosemu_fenv);
@@ -260,7 +263,7 @@ void dpmi_return(sigcontext_t *scp, int retcode)
     if (dpmi_ret_val == DPMI_RET_EXIT)
         copy_context(scp, &emu_stack_frame);
     else
-        copy_to_dpmi(scp, dpmi_get_scp());
+        copy_to_dpmi(scp, dpmi_scp);
 }
 
 void dpmi_switch_sa(int sig, siginfo_t * inf, void *uc)
@@ -268,7 +271,7 @@ void dpmi_switch_sa(int sig, siginfo_t * inf, void *uc)
     ucontext_t *uct = uc;
     sigcontext_t *scp = &uct->uc_mcontext;
     copy_context(&emu_stack_frame, scp);
-    copy_to_dpmi(scp, dpmi_get_scp());
+    copy_to_dpmi(scp, dpmi_scp);
     unsetsig(DPMI_TMP_SIG);
     deinit_handler(scp, &uct->uc_flags);
 }
