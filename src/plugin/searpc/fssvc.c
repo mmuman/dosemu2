@@ -44,10 +44,10 @@ struct svc_args {
     getattr_t getattr_cb;
 };
 
-static int fssrv_init(int transp, int sock, void *arg)
+static int fssrv_init(const char *svc_name, int sock, void *arg)
 {
     struct svc_args *args = arg;
-    return fsrpc_srv_init(transp, sock, args->plist_idx, args->setattr_cb,
+    return fsrpc_srv_init(svc_name, sock, args->plist_idx, args->setattr_cb,
                           args->getattr_cb);
 }
 
@@ -56,7 +56,8 @@ int fssvc_init(plist_idx_t plist_idx, setattr_t setattr_cb,
 {
     struct svc_args args = { plist_idx, setattr_cb, getattr_cb };
 
-    clnt = clnt_init(&sock_rx, fssrv_init, &args, fsrpc_svc_run, svc_ex);
+    clnt = clnt_init(&sock_rx, fssrv_init, &args, fsrpc_exiting,
+            svc_ex, "fsrpc");
     return (clnt ? 0 : -1);
 }
 

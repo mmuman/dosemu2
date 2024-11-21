@@ -22,7 +22,6 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
 #include <searpc-server.h>
 #include <searpc-utils.h>
 #include "utilities.h"
@@ -38,7 +37,6 @@ static int num_paths;
 static char *paths_ex[MAX_PATHS];
 static int num_paths_ex;
 static int sealed;
-static int transp_fd;
 static int sock_tx;
 static plist_idx_t plist_idx_cb;
 static setattr_t setattr_cb;
@@ -265,12 +263,9 @@ static int shm_unlink_1_svc(const char *name)
     return shm_unlink(name);
 }
 
-static const char *svc_name = "fsrpc";
-
-int fsrpc_srv_init(int tr_fd, int fd, plist_idx_t pi, setattr_t sa,
-    getattr_t ga)
+int fsrpc_srv_init(const char *svc_name, int fd, plist_idx_t pi, setattr_t sa,
+        getattr_t ga)
 {
-    transp_fd = tr_fd;
     sock_tx = fd;
     plist_idx_cb = pi;
     setattr_cb = sa;
@@ -316,23 +311,7 @@ int fsrpc_srv_init(int tr_fd, int fd, plist_idx_t pi, setattr_t sa,
     return 0;
 }
 
-void fsrpc_svc_run(void)
+int fsrpc_exiting(void)
 {
-    while (1) {
-        char buf[4096];
-        gchar *json;
-        gsize len = 0;
-        ssize_t rd = recv(transp_fd, buf, sizeof(buf), 0);
-        if (rd <= 0)
-            exit(0);
-        json = searpc_server_call_function(svc_name, buf, rd, &len);
-        if (!len)
-            exit(0);
-        rd = send(transp_fd, json, len, 0);
-        free(json);
-        if (rd <= 0)
-            exit(0);
-        if (exiting)
-            exit(0);
-    }
+    return exiting;
 }
