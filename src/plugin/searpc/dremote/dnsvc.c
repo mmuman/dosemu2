@@ -20,9 +20,10 @@
 #include <errno.h>
 #include <pthread.h>
 #include <searpc.h>
-#include "plugin_config.h"
 #include "utilities.h"
 #include "mapping.h"
+#include "dnative.h"
+#include "plugin_config.h"
 #include "init.h"
 #include "emu.h"
 #include "util.h"
@@ -62,6 +63,9 @@ static int remote_mmap(void *addr, size_t length, int prot, int flags,
 {
     int ret;
     GError *error = NULL;
+
+    if (!clnt)
+        return 0;
     send_fd(sock_tx, fd);
     pthread_mutex_lock(&rpc_mtx);
     ret = searpc_client_call__int(clnt, "mmap_1",
@@ -114,12 +118,156 @@ static const struct mapping_hook mhook = {
     .madvise = remote_madvise,
 };
 
-CONSTRUCTOR(static void dnsvc_init(void))
+static int remote_dpmi_setup(void)
 {
+    int ret;
+    GError *error = NULL;
+
+    if (clnt)
+        return -1;
     clnt = clnt_init(&sock_tx, dnsrv_init, NULL, NULL, svc_ex, "dnrpc");
     if (!clnt) {
         fprintf(stderr, "failure registering RPC\n");
-        return;
+        return -1;
     }
-    mapping_register_hook(&mhook);
+    pthread_mutex_lock(&rpc_mtx);
+    ret = searpc_client_call__int(clnt, "setup_1", &error, 0);
+    pthread_mutex_unlock(&rpc_mtx);
+    CHECK_RPC(error);
+    return ret;
+}
+
+static int _remote_dpmi_done(void)
+{
+    int ret;
+    GError *error = NULL;
+    pthread_mutex_lock(&rpc_mtx);
+    searpc_client_call__int(clnt, "done_1", &error, 0);
+    pthread_mutex_unlock(&rpc_mtx);
+    CHECK_RPC(error);
+    return ret;
+}
+
+static void remote_dpmi_done(void)
+{
+    _remote_dpmi_done();
+}
+
+static void send_state(cpuctx_t *scp)
+{
+    send(sock_tx, scp, sizeof(*scp), 0);
+    send(sock_tx, &vm86_fpu_state, sizeof(vm86_fpu_state), 0);
+}
+
+static void recv_state(cpuctx_t *scp)
+{
+    recv(sock_tx, scp, sizeof(*scp), 0);
+    recv(sock_tx, &vm86_fpu_state, sizeof(vm86_fpu_state), 0);
+}
+
+static int remote_dpmi_control(cpuctx_t *scp)
+{
+    int ret;
+    GError *error = NULL;
+    send_state(scp);
+    pthread_mutex_lock(&rpc_mtx);
+    ret = searpc_client_call__int(clnt, "control_1", &error, 0);
+    pthread_mutex_unlock(&rpc_mtx);
+    CHECK_RPC(error);
+    recv_state(scp);
+    return ret;
+}
+
+static int remote_dpmi_exit(cpuctx_t *scp)
+{
+    int ret;
+    GError *error = NULL;
+    send_state(scp);
+    pthread_mutex_lock(&rpc_mtx);
+    ret = searpc_client_call__int(clnt, "exit_1", &error, 0);
+    pthread_mutex_unlock(&rpc_mtx);
+    CHECK_RPC(error);
+    recv_state(scp);
+    return ret;
+}
+
+static int remote_read_ldt(void *ptr, int bytecount)
+{
+    int ret;
+    GError *error = NULL;
+    pthread_mutex_lock(&rpc_mtx);
+    ret = searpc_client_call__int(clnt, "read_ldt_1",
+                                  &error, 1,
+                                  "int", bytecount);
+    pthread_mutex_unlock(&rpc_mtx);
+    CHECK_RPC(error);
+    if (ret > 0)
+        ret = recv(sock_tx, ptr, ret, 0);
+    return ret;
+}
+
+static int remote_write_ldt(void *ptr, int bytecount)
+{
+    int ret;
+    GError *error = NULL;
+    ret = send(sock_tx, ptr, bytecount, 0);
+    if (ret != bytecount) {
+        error("send() failed\n");
+        leavedos(6);
+        return -1;
+    }
+    pthread_mutex_lock(&rpc_mtx);
+    ret = searpc_client_call__int(clnt, "write_ldt_1",
+                                  &error, 1,
+                                  "int", bytecount);
+    pthread_mutex_unlock(&rpc_mtx);
+    CHECK_RPC(error);
+    return ret;
+}
+
+static int remote_check_verr(unsigned short selector)
+{
+    int ret;
+    GError *error = NULL;
+    pthread_mutex_lock(&rpc_mtx);
+    ret = searpc_client_call__int(clnt, "check_verr_1",
+                                  &error, 1,
+                                  "int", selector);
+    pthread_mutex_unlock(&rpc_mtx);
+    CHECK_RPC(error);
+    return ret;
+}
+
+static int remote_debug_breakpoint(int op, cpuctx_t *scp, int err)
+{
+    int ret;
+    GError *error = NULL;
+    send_state(scp);
+    pthread_mutex_lock(&rpc_mtx);
+    ret = searpc_client_call__int(clnt, "debug_breakpoint_1",
+                                  &error, 2,
+                                  "int", op, "int", err);
+    pthread_mutex_unlock(&rpc_mtx);
+    CHECK_RPC(error);
+    recv_state(scp);
+    return ret;
+}
+
+static const struct dnative_ops ops = {
+    remote_dpmi_setup,
+    remote_dpmi_done,
+    remote_dpmi_control,
+    remote_dpmi_exit,
+    remote_read_ldt,
+    remote_write_ldt,
+    remote_check_verr,
+    remote_debug_breakpoint,
+};
+
+CONSTRUCTOR(static void dnsvc_init(void))
+{
+    if (config.dpmi_remote) {
+        mapping_register_hook(&mhook);
+        register_dnative_ops(&ops);
+    }
 }

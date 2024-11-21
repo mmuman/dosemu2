@@ -23,4 +23,6 @@ struct dnative_ops {
 
 int register_dnative_ops(const struct dnative_ops *ops);
 
+extern const struct dnative_ops *dnops;
+
 #endif

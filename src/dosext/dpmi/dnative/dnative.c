@@ -23,7 +23,7 @@
 #include "emudpmi.h"
 #include "dnative.h"
 
-static const struct dnative_ops *dnops;
+const struct dnative_ops *dnops;
 
 static void check_ldt(void)
 {
@@ -55,24 +55,29 @@ static void check_ldt(void)
 
 int native_dpmi_setup(void)
 {
+    int ret;
+
 #ifdef SEARPC_SUPPORT
-    if (!dnops)
+    if (!dnops && config.dpmi_remote)
         load_plugin("dremote");
 #endif
 #ifdef DNATIVE
-    if (!dnops)
+    if (!dnops && !config.dpmi_remote)
         load_plugin("dnative");
 #endif
     if (!dnops) {
         error("Native DPMI not compiled in\n");
         return -1;
     }
+    ret = dnops->setup();
     check_ldt();
-    return dnops->setup();
+    return ret;
 }
 
 void native_dpmi_done(void)
 {
+    if (!dnops)
+        return;
     dnops->done();
 }
 
@@ -128,8 +133,7 @@ int native_debug_breakpoint(int op, cpuctx_t *scp, int err)
 
 int register_dnative_ops(const struct dnative_ops *ops)
 {
-    if (dnops)
-        return -1;
+    assert(!dnops);
     dnops = ops;
     return 0;
 }

@@ -379,6 +379,7 @@ cpu_vm_dpmi		RETURN(CPU_VM_DPMI);
 kvm			RETURN(KVM);
 cpuemu			RETURN(CPUEMU);
 vm86			RETURN(VM86);
+remote			RETURN(REMOTE);
 
 	/* disk keywords */
 hdimage			RETURN(HDIMAGE);

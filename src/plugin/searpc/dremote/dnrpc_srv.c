@@ -19,12 +19,17 @@
 #include <stdint.h>
 #include <utime.h>
 #include <assert.h>
+#include <alloca.h>
 #include <errno.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
+#include <sys/socket.h>
 #include <searpc-server.h>
 #include <searpc-utils.h>
+#include "cpu.h"
+#include "dnative.h"
+#include "plugin_config.h"
 #include "utilities.h"
+#include "emu.h"
 #include "searpc-signature.h"
 #include "searpc-marshal.h"
 #include "dnrpcdefs.h"
@@ -56,9 +61,91 @@ static int madvise_1_svc(uint64_t addr, uint64_t length, int flags)
     return madvise((void *)(uintptr_t)addr, length, flags);
 }
 
+static int setup_1_svc(void)
+{
+    return dnops->setup();
+}
+
+static int done_1_svc(void)
+{
+    dnops->done();
+    return 0;
+}
+
+static void send_state(cpuctx_t *scp)
+{
+    send(sock_rx, scp, sizeof(*scp), 0);
+    send(sock_rx, &vm86_fpu_state, sizeof(vm86_fpu_state), 0);
+}
+
+static void recv_state(cpuctx_t *scp)
+{
+    recv(sock_rx, scp, sizeof(*scp), 0);
+    recv(sock_rx, &vm86_fpu_state, sizeof(vm86_fpu_state), 0);
+}
+
+static int control_1_svc(void)
+{
+    cpuctx_t scp;
+    int ret;
+
+    recv_state(&scp);
+    ret = dnops->control(&scp);
+    send_state(&scp);
+    return ret;
+}
+
+static int exit_1_svc(void)
+{
+    cpuctx_t scp;
+    int ret;
+
+    recv_state(&scp);
+    ret = dnops->exit(&scp);
+    send_state(&scp);
+    return ret;
+}
+
+static int read_ldt_1_svc(int bytecount)
+{
+    void *ptr = alloca(bytecount);
+    int ret = dnops->read_ldt(ptr, bytecount);
+
+    if (ret > 0)
+        ret = send(sock_rx, ptr, ret, 0);
+    return ret;
+}
+
+static int write_ldt_1_svc(int bytecount)
+{
+    void *ptr = alloca(bytecount);
+    int ret = recv(sock_rx, ptr, bytecount, 0);
+
+    if (ret > 0)
+        ret = dnops->write_ldt(ptr, bytecount);
+    return ret;
+}
+
+static int check_verr_1_svc(int selector)
+{
+    return dnops->check_verr(selector);
+}
+
+static int debug_breakpoint_1_svc(int op, int err)
+{
+    cpuctx_t scp;
+    int ret;
+
+    recv_state(&scp);
+    ret = dnops->debug_breakpoint(op, &scp, err);
+    send_state(&scp);
+    return ret;
+}
+
 
 int dnrpc_srv_init(const char *svc_name, int fd)
 {
+    void *plu;
     sock_rx = fd;
     searpc_server_init(register_marshals);
     searpc_create_service(svc_name);
@@ -69,5 +156,28 @@ int dnrpc_srv_init(const char *svc_name, int fd)
             searpc_signature_int__int64_int64_int());
     searpc_server_register_function(svc_name, madvise_1_svc, "madvise_1",
             searpc_signature_int__int64_int64_int());
-    return 0;
+
+    searpc_server_register_function(svc_name, setup_1_svc, "setup_1",
+            searpc_signature_int__void());
+    searpc_server_register_function(svc_name, done_1_svc, "done_1",
+            searpc_signature_int__void());
+    searpc_server_register_function(svc_name, control_1_svc, "control_1",
+            searpc_signature_int__void());
+    searpc_server_register_function(svc_name, exit_1_svc, "exit_1",
+            searpc_signature_int__void());
+    searpc_server_register_function(svc_name, read_ldt_1_svc, "read_ldt_1",
+            searpc_signature_int__int());
+    searpc_server_register_function(svc_name, write_ldt_1_svc, "write_ldt_1",
+            searpc_signature_int__int());
+    searpc_server_register_function(svc_name, check_verr_1_svc, "check_verr_1",
+            searpc_signature_int__int());
+    searpc_server_register_function(svc_name, debug_breakpoint_1_svc,
+            "debug_breakpoint_1",
+            searpc_signature_int__int_int());
+
+    signal_init();
+    timer_interrupt_init();
+    dnops = NULL;
+    plu = load_plugin("dnative");
+    return (plu ? 0 : -1);
 }

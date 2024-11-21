@@ -13,7 +13,7 @@ endif
 ALL_CFLAGS += $(DL_CFLAGS) $(SR_CFLAGS) -Wno-strict-prototypes
 ALL_CPPFLAGS += -I. -I..
 
-CFILES = ../util.c dnsvc.c dnrpc_srv.c
+CFILES = util.c dnsvc.c dnrpc_srv.c
 GEN_H = searpc-signature.h searpc-marshal.h
 
 ifeq ($(USE_DL_PLUGINS),1)
@@ -22,6 +22,7 @@ endif
 
 include $(REALTOPDIR)/src/Makefile.common.post
 vpath %.py $(srcdir)
+vpath util.c $(srcdir)/..
 
 clean::
 	$(RM) $(GENCFILES) $(GEN_H)
