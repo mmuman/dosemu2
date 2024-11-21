@@ -362,7 +362,7 @@ int get_ldt(void *buffer, int len)
   struct ldt_descriptor *dp;
   if (config.cpu_vm_dpmi != CPUVM_NATIVE)
 	return emu_modify_ldt(LDT_READ, buffer, len);
-  ret = native_modify_ldt(LDT_READ, buffer, len);
+  ret = native_read_ldt(buffer, len);
   /* do emu_modify_ldt even if modify_ldt fails, so cpu_vm_dpmi fallbacks can
      still work */
   if (ret != len)
@@ -388,10 +388,10 @@ static int put_ldt(struct user_desc *ldt_info)
        has all base addresses with respect to mem_base */
     if (!ldt_info->seg_not_present) {
       ldt_info->base_addr += (uintptr_t)mem_base;
-      __retval = native_modify_ldt(LDT_WRITE, ldt_info, sizeof(*ldt_info));
+      __retval = native_write_ldt(ldt_info, sizeof(*ldt_info));
       ldt_info->base_addr -= (uintptr_t)mem_base;
     } else {
-      __retval = native_modify_ldt(LDT_WRITE, ldt_info, sizeof(*ldt_info));
+      __retval = native_write_ldt(ldt_info, sizeof(*ldt_info));
     }
     if (__retval)
       return __retval;
