@@ -29,8 +29,9 @@
 #include "utilities.h"
 #include "dos2linux.h"
 #include "kvm.h"
-#include "mapping.h"
 #include "smalloc.h"
+#include "mapping.h"
+#include "mpriv.h"
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -97,6 +98,8 @@ static unsigned do_find_hardware_ram(dosaddr_t va, uint32_t size,
 	struct hardware_ram **r_hw);
 static void hwram_update_aliasmap(struct hardware_ram *hw, unsigned addr,
 	int size, unsigned char *src);
+static int mprotect_hook(void *addr, size_t length, int prot);
+static int madvise_hook(void *addr, size_t length, int flags);
 
 static void update_aliasmap(dosaddr_t dosaddr, size_t mapsize,
 			    unsigned char *unixaddr)
@@ -450,7 +453,7 @@ int mprotect_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect)
   if (is_kvm_map(cap))
     mprotect_kvm(cap, targ, mapsize, protect);
   if (!(cap & MAPPING_LOWMEM)) {
-    ret = mprotect(MEM_BASE32(targ), mapsize, protect);
+    ret = mprotect_hook(MEM_BASE32(targ), mapsize, protect);
     if (ret)
       error("mprotect() failed: %s\n", strerror(errno));
     return ret;
@@ -463,7 +466,7 @@ int mprotect_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect)
     assert(i == MEM_BASE || targ + mapsize <= ALIAS_SIZE);
     Q__printf("MAPPING: mprotect, cap=%s, addr=%p, size=%zx, protect=%x\n",
 	cap, addr, mapsize, protect);
-    ret = mprotect(addr, mapsize, protect);
+    ret = (i == MEM_BASE ? mprotect_hook : mprotect)(addr, mapsize, protect);
     if (ret) {
       error("mprotect() failed: %s\n", strerror(errno));
       return ret;
@@ -1014,7 +1017,7 @@ int mcommit(void *ptr, size_t size)
   if (err == -1)
     return 0;
 #if HAVE_DECL_MADV_POPULATE_WRITE
-  err = madvise(ptr, size, MADV_POPULATE_WRITE);
+  err = madvise_hook(ptr, size, MADV_POPULATE_WRITE);
   if (err)
     perror("madvise()");
 #endif
@@ -1063,7 +1066,57 @@ int unalias_mapping_pa(int cap, unsigned addr, size_t mapsize)
   return 1;
 }
 
+static const struct mapping_hook *mapping_hook;
+
+void mapping_register_hook(const struct mapping_hook *hook)
+{
+  assert(!mapping_hook);
+  mapping_hook = hook;
+}
+
+void *mmap_shm_hook(void *addr, size_t length, int prot, int flags,
+                    int fd, off_t offset)
+{
+  int err = 0;
+  void *ret = mmap(addr, length, prot, flags, fd, offset);
+  if (ret != addr || (unsigned char *)addr < mem_bases[MEM_BASE].base ||
+      (unsigned char *)addr + length > mem_bases[MEM_BASE].base +
+      mem_bases[MEM_BASE].size)
+    return ret;
+  if (mapping_hook)
+    err = mapping_hook->mmap(addr, length, prot, flags, fd, offset);
+  if (err) {
+    munmap(ret, length);
+    ret = MAP_FAILED;
+  }
+  return ret;
+}
+
+static int mprotect_hook(void *addr, size_t length, int prot)
+{
+  int err = mprotect(addr, length, prot);
+  if (err || (unsigned char *)addr < mem_bases[MEM_BASE].base ||
+      (unsigned char *)addr + length > mem_bases[MEM_BASE].base +
+      mem_bases[MEM_BASE].size)
+    return err;
+  if (mapping_hook)
+    err = mapping_hook->mprotect(addr, length, prot);
+  return err;
+}
+
+static int madvise_hook(void *addr, size_t length, int flags)
+{
+  int err = madvise(addr, length, flags);
+  if (err || (unsigned char *)addr < mem_bases[MEM_BASE].base ||
+      (unsigned char *)addr + length > mem_bases[MEM_BASE].base +
+      mem_bases[MEM_BASE].size)
+    return err;
+  if (mapping_hook)
+    err = mapping_hook->madvise(addr, length, flags);
+  return err;
+}
+
 void *mmap_shm_ux(void *addr, size_t length, int prot, int fd)
 {
-  return mmap(addr, length, prot, MAP_SHARED | MAP_FIXED, fd, 0);
+  return mmap_shm_hook(addr, length, prot, MAP_SHARED | MAP_FIXED, fd, 0);
 }

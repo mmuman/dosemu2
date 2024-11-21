@@ -33,6 +33,7 @@
 
 #include "dosemu_debug.h"
 #include "mapping.h"
+#include "mpriv.h"
 
 /* ------------------------------------------------------------ */
 
@@ -81,7 +82,8 @@ static void *alias_mapping_file(int cap, void *target, size_t mapsize, int prote
   else
     target = NULL;
   /* /dev/shm may be mounted noexec, and then mounting PROT_EXEC fails. */
-  addr = mmap(target, mapsize, protect, MAP_SHARED | fixed, p->fd, offs);
+  addr = mmap_shm_hook(target, mapsize, protect,
+          MAP_SHARED | fixed, p->fd, offs);
   if (addr == MAP_FAILED) {
     int errn = errno;
     addr = mmap(target, mapsize, protect & ~PROT_EXEC, MAP_SHARED | fixed,
