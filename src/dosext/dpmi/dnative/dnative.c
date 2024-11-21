@@ -55,6 +55,10 @@ static void check_ldt(void)
 
 int native_dpmi_setup(void)
 {
+#ifdef SEARPC_SUPPORT
+    if (!dnops)
+        load_plugin("dremote");
+#endif
 #ifdef DNATIVE
     if (!dnops)
         load_plugin("dnative");
