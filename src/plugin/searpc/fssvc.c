@@ -57,7 +57,7 @@ int fssvc_init(plist_idx_t plist_idx, setattr_t setattr_cb,
     struct svc_args args = { plist_idx, setattr_cb, getattr_cb };
 
     clnt = clnt_init(&sock_rx, fssrv_init, &args, fsrpc_exiting,
-            svc_ex, "fsrpc");
+            svc_ex, "fsrpc", NULL);
     return (clnt ? 0 : -1);
 }
 

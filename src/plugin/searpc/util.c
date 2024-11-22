@@ -52,7 +52,7 @@ static char *transport_callback(void *arg, const char *fcall_str,
 
 SearpcClient *clnt_init(int *sock_rx, init_cb_t init_cb,
         void *init_arg, int (*svc_ex)(void),
-        void (*ex_cb)(void *), const char *svc_name)
+        void (*ex_cb)(void *), const char *svc_name, pid_t *r_pid)
 {
     SearpcClient *clnt;
     int socks[2];
@@ -113,6 +113,8 @@ SearpcClient *clnt_init(int *sock_rx, init_cb_t init_cb,
     clnt->arg = (void *)(uintptr_t)transp[0];
     sigchld_register_handler(pid, ex_cb, NULL);
     *sock_rx = socks[0];
+    if (r_pid)
+        *r_pid = pid;
     return clnt;
 
 err2:

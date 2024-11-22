@@ -125,7 +125,8 @@ static int remote_dpmi_setup(void)
 
     if (clnt)
         return -1;
-    clnt = clnt_init(&sock_tx, dnsrv_init, NULL, NULL, svc_ex, "dnrpc");
+    clnt = clnt_init(&sock_tx, dnsrv_init, NULL, NULL, svc_ex, "dnrpc",
+            &dpmi_pid);
     if (!clnt) {
         fprintf(stderr, "failure registering RPC\n");
         return -1;

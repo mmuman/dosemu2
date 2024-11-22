@@ -176,7 +176,6 @@ int dnrpc_srv_init(const char *svc_name, int fd)
             searpc_signature_int__int_int());
 
     signal_init();
-    timer_interrupt_init();
     dnops = NULL;
     plu = load_plugin("dnative");
     return (plu ? 0 : -1);

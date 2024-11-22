@@ -262,6 +262,8 @@ static void sigbreak(void *uc)
 {
   /* let CPUEMU decide what to do, as it can kick in for any backend */
   e_gen_sigalrm();
+  if (config.dpmi_remote && dpmi_pid)
+    kill(dpmi_pid, SIG_THREAD_NOTIFY);
 }
 
 /* this cleaning up is necessary to avoid the port server becoming

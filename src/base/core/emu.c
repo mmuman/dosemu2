@@ -116,6 +116,7 @@ int fatalerr;
 int in_leavedos;
 pthread_t dosemu_pthread_self;
 pid_t dosemu_pid;
+pid_t dpmi_pid;
 char * const *dosemu_envp;
 FILE *real_stderr;
 
