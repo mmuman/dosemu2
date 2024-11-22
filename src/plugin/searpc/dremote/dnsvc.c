@@ -33,6 +33,7 @@ static SearpcClient *clnt;
 static int sock_tx;
 static int exited;
 static pthread_mutex_t rpc_mtx = PTHREAD_MUTEX_INITIALIZER;
+void *rpc_shared_page;
 
 static int remote_mmap(void *addr, size_t length, int prot, int flags,
                        int fd, off_t offset);
@@ -125,6 +126,8 @@ static int remote_dpmi_setup(void)
 
     if (clnt)
         return -1;
+    rpc_shared_page = alloc_mapping(MAPPING_OTHER, PAGE_SIZE);
+    assert(rpc_shared_page != MAP_FAILED);
     clnt = clnt_init(&sock_tx, dnsrv_init, NULL, NULL, svc_ex, "dnrpc",
             &dpmi_pid);
     if (!clnt) {
@@ -152,18 +155,6 @@ static int _remote_dpmi_done(void)
 static void remote_dpmi_done(void)
 {
     _remote_dpmi_done();
-}
-
-static void send_state(cpuctx_t *scp)
-{
-    send(sock_tx, scp, sizeof(*scp), 0);
-    send(sock_tx, &vm86_fpu_state, sizeof(vm86_fpu_state), 0);
-}
-
-static void recv_state(cpuctx_t *scp)
-{
-    recv(sock_tx, scp, sizeof(*scp), 0);
-    recv(sock_tx, &vm86_fpu_state, sizeof(vm86_fpu_state), 0);
 }
 
 static int remote_dpmi_control(cpuctx_t *scp)

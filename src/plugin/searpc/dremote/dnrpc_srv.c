@@ -72,18 +72,6 @@ static int done_1_svc(void)
     return 0;
 }
 
-static void send_state(cpuctx_t *scp)
-{
-    send(sock_rx, scp, sizeof(*scp), 0);
-    send(sock_rx, &vm86_fpu_state, sizeof(vm86_fpu_state), 0);
-}
-
-static void recv_state(cpuctx_t *scp)
-{
-    recv(sock_rx, scp, sizeof(*scp), 0);
-    recv(sock_rx, &vm86_fpu_state, sizeof(vm86_fpu_state), 0);
-}
-
 static int control_1_svc(void)
 {
     cpuctx_t scp;
