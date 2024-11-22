@@ -26,7 +26,7 @@
 #include "plugin_config.h"
 #include "init.h"
 #include "emu.h"
-#include "util.h"
+#include "../util.h"
 #include "dnrpcdefs.h"
 
 static SearpcClient *clnt;

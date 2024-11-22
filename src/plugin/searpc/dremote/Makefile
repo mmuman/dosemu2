@@ -11,7 +11,7 @@ include ../Makefile.conf
 endif
 
 ALL_CFLAGS += $(DL_CFLAGS) $(SR_CFLAGS) -Wno-strict-prototypes
-ALL_CPPFLAGS += -I. -I..
+ALL_CPPFLAGS += -I.
 
 CFILES = util.c dnsvc.c dnrpc_srv.c
 GEN_H = searpc-signature.h searpc-marshal.h
