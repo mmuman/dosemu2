@@ -85,6 +85,17 @@ int restore_mapping(int cap, dosaddr_t targ, size_t mapsize);
 /* below wrapper is needed only for remoting the mapping subsystem */
 void *mmap_shm_ux(void *addr, size_t length, int prot, int fd);
 
+typedef int mmap_hook_type(void *addr, size_t length, int prot,
+                           int flags, int fd, off_t offset);
+typedef int mprotect_hook_type(void *addr, size_t length, int prot);
+typedef int madvise_hook_type(void *addr, size_t length, int prot);
+struct mapping_hook {
+  mmap_hook_type *mmap;
+  mprotect_hook_type *mprotect;
+  madvise_hook_type *madvise;
+};
+void mapping_register_hook(const struct mapping_hook *hook);
+
 typedef int open_mapping_type(int cap);
 typedef void close_mapping_type(int cap);
 typedef void *alloc_mapping_type(int cap, size_t mapsize, void *target);

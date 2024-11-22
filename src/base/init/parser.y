@@ -245,8 +245,8 @@ enum {
 %token LFN_SUPPORT FFS_REDIR SET_INT_HOOKS TRACE_IRETS FINT_REVECT
 	/* speaker */
 %token EMULATED NATIVE
-	/* cpuemu */
-%token CPUEMU CPU_VM CPU_VM_DPMI VM86 KVM
+	/* cpuemu/dpmi */
+%token CPUEMU CPU_VM CPU_VM_DPMI VM86 KVM REMOTE
 	/* keyboard */
 %token RAWKEYBOARD
 %token PRESTROKE
@@ -1848,6 +1848,7 @@ cpu_vm		: L_AUTO	{ $$ = -1; }
 
 cpu_vm_dpmi	: L_AUTO	{ $$ = -1; }
 		| NATIVE	{ $$ = CPUVM_NATIVE; }
+		| REMOTE	{ $$ = CPUVM_NATIVE; config.dpmi_remote = 1; }
 		| KVM		{ $$ = CPUVM_KVM; }
 		| EMULATED	{ $$ = CPUVM_EMU; }
 		| STRING        { yyerror("got '%s' for cpu_vm_dpmi", $1);

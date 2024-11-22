@@ -23,7 +23,7 @@
 #include "emudpmi.h"
 #include "dnative.h"
 
-static const struct dnative_ops *dnops;
+const struct dnative_ops *dnops;
 
 static void check_ldt(void)
 {
@@ -33,7 +33,7 @@ static void check_ldt(void)
     unsigned int base_addr, limit, *lp;
     int type, np;
 
-    ret = dnops->modify_ldt(LDT_READ, buffer, sizeof(buffer));
+    ret = dnops->read_ldt(buffer, sizeof(buffer));
     /* may return 0 if no LDT */
     if (ret == sizeof(buffer)) {
         for (i = 0; i < MAX_SELECTORS; i++) {
@@ -55,20 +55,29 @@ static void check_ldt(void)
 
 int native_dpmi_setup(void)
 {
+    int ret;
+
+#ifdef SEARPC_SUPPORT
+    if (!dnops && config.dpmi_remote)
+        load_plugin("dremote");
+#endif
 #ifdef DNATIVE
-    if (!dnops)
+    if (!dnops && !config.dpmi_remote)
         load_plugin("dnative");
 #endif
     if (!dnops) {
         error("Native DPMI not compiled in\n");
         return -1;
     }
+    ret = dnops->setup();
     check_ldt();
-    return dnops->setup();
+    return ret;
 }
 
 void native_dpmi_done(void)
 {
+    if (!dnops)
+        return;
     dnops->done();
 }
 
@@ -102,9 +111,14 @@ int native_dpmi_exit(cpuctx_t *scp)
     return dnops->exit(scp);
 }
 
-int native_modify_ldt(int func, void *ptr, unsigned long bytecount)
+int native_read_ldt(void *ptr, int bytecount)
 {
-    return dnops->modify_ldt(func, ptr, bytecount);
+    return dnops->read_ldt(ptr, bytecount);
+}
+
+int native_write_ldt(void *ptr, int bytecount)
+{
+    return dnops->write_ldt(ptr, bytecount);
 }
 
 int native_check_verr(unsigned short selector)
@@ -119,8 +133,7 @@ int native_debug_breakpoint(int op, cpuctx_t *scp, int err)
 
 int register_dnative_ops(const struct dnative_ops *ops)
 {
-    if (dnops)
-        return -1;
+    assert(!dnops);
     dnops = ops;
     return 0;
 }

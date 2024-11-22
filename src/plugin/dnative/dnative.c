@@ -44,8 +44,6 @@ static int in_dpmi_thr;
 static int dpmi_thr_running;
 static cpuctx_t *dpmi_scp;
 
-static int _modify_ldt(int func, void *ptr, unsigned long bytecount);
-
 static void copy_context(sigcontext_t *d, sigcontext_t *s)
 {
 #ifdef __linux__
@@ -287,9 +285,14 @@ static void _done(void)
     co_thread_cleanup(co_handle);
 }
 
-static int _modify_ldt(int func, void *ptr, unsigned long bytecount)
+static int _read_ldt(void *ptr, int bytecount)
 {
-  return syscall(SYS_modify_ldt, func, ptr, bytecount);
+  return syscall(SYS_modify_ldt, LDT_READ, ptr, bytecount);
+}
+
+static int _write_ldt(void *ptr, int bytecount)
+{
+  return syscall(SYS_modify_ldt, LDT_WRITE, ptr, bytecount);
 }
 
 static int _check_verr(unsigned short selector)
@@ -408,7 +411,8 @@ static const struct dnative_ops ops = {
   .exit = _dpmi_exit,
   .setup = _setup,
   .done = _done,
-  .modify_ldt = _modify_ldt,
+  .read_ldt = _read_ldt,
+  .write_ldt = _write_ldt,
   .check_verr = _check_verr,
   .debug_breakpoint = _debug_breakpoint,
 };

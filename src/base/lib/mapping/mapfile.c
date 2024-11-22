@@ -33,6 +33,7 @@
 
 #include "dosemu_debug.h"
 #include "mapping.h"
+#include "mpriv.h"
 
 /* ------------------------------------------------------------ */
 
@@ -80,23 +81,18 @@ static void *alias_mapping_file(int cap, void *target, size_t mapsize, int prote
     fixed = MAP_FIXED;
   else
     target = NULL;
-  /* /dev/shm may be mounted noexec, and then mounting PROT_EXEC fails.
-     However mprotect may work around this (maybe not in future kernels)
-     alloc_mappings can just be rw though.
-   */
-  addr = mmap(target, mapsize, protect, MAP_SHARED | fixed, p->fd, offs);
+  /* /dev/shm may be mounted noexec, and then mounting PROT_EXEC fails. */
+  addr = mmap_shm_hook(target, mapsize, protect,
+          MAP_SHARED | fixed, p->fd, offs);
   if (addr == MAP_FAILED) {
+    int errn = errno;
     addr = mmap(target, mapsize, protect & ~PROT_EXEC, MAP_SHARED | fixed,
 		 p->fd, offs);
-    if (addr != MAP_FAILED) {
-      int ret = mprotect(addr, mapsize, protect);
-      if (ret == -1) {
-        perror("mprotect()");
-        error("shared memory mprotect failed, exiting\n");
-        exit(2);
-      }
-    } else
+    if (addr != MAP_FAILED && errn == EACCES)
+      error("/dev/shm mounted with noexec, exiting\n");
+    else
       perror("mmap()");
+    exit(2);
   }
 #if 1
   Q_printf("MAPPING: alias_map, fileoffs %llx to %p size %zx, result %p\n",

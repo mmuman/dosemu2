@@ -4,32 +4,35 @@
 # for details see file COPYING.DOSEMU in the DOSEMU distribution
 #
 
-top_builddir=../../..
-include ../plugins.mak
-ALL_CFLAGS += $(DL_CFLAGS) $(SR_CFLAGS) -Wno-strict-prototypes
-ALL_CPPFLAGS += -I.
+top_builddir=../../../..
+include ../../plugins_simp.mak
+ifeq ($(findstring $(MAKECMDGOALS), clean realclean configure),)
+include ../Makefile.conf
+endif
 
-CFILES = test-object.c fsrpc_srv.c fssvc.c fslib_be.c util.c
+ALL_CFLAGS += $(DL_CFLAGS) $(SR_CFLAGS) -Wno-strict-prototypes
+ALL_CPPFLAGS += -I. -I..
+
+CFILES = util.c dnsvc.c dnrpc_srv.c
 GEN_H = searpc-signature.h searpc-marshal.h
 
 ifeq ($(USE_DL_PLUGINS),1)
-all: $(BINPATH)/bin/libplugin_searpc.so
-	$(MAKE) -C dremote
+all: $(BINPATH)/bin/libplugin_dremote.so
 endif
 
 include $(REALTOPDIR)/src/Makefile.common.post
 vpath %.py $(srcdir)
+vpath util.c $(srcdir)/..
 
 clean::
 	$(RM) $(GENCFILES) $(GEN_H)
-	$(MAKE) -C dremote clean
 
-fsrpc_srv.o: fsrpc_srv.c $(GEN_H)
+dnrpc_srv.o: dnrpc_srv.c $(GEN_H)
 
 $(GEN_H) &: rpc_table.py
 	$(RPCGEN) $<
 
 ifeq ($(USE_DL_PLUGINS),1)
-$(BINPATH)/bin/libplugin_searpc.so: $(OBJS) | $(BINPATH)/bin
+$(BINPATH)/bin/libplugin_dremote.so: $(OBJS) | $(BINPATH)/bin
 	$(CC) $(LDFLAGS) -shared -o $@ $^ $(SR_LIBS)
 endif
