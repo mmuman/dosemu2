@@ -1283,7 +1283,7 @@ quit:
 /////////////////////////////////////////////////////////////////////////////
 static void do_invalidate(unsigned data, int cnt)
 {
-	cnt = PAGE_ALIGN(data+cnt-1) - (data & _PAGE_MASK);
+	cnt = PAGE_ALIGN(data + cnt) - (data & _PAGE_MASK);
 	data &= _PAGE_MASK;
 #ifdef HOST_ARCH_X86
 	/* e_querymprotrange prevents coming here for sim */

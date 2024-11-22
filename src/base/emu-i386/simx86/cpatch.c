@@ -65,7 +65,7 @@ void m_munprotect(unsigned int addr, unsigned int len, unsigned char *eip)
 	 * Maybe the stub was set up before that code was parsed.
 	 * Clear that code */
 /*	if (UnCpatch((void *)(eip-3))) leavedos_main(0); */
-	len = PAGE_ALIGN(addr+len-1) - (addr & _PAGE_MASK);
+	len = PAGE_ALIGN(addr + len) - (addr & _PAGE_MASK);
 	addr &= _PAGE_MASK;
 	InvalidateNodeRange(addr,len,eip);
 }
