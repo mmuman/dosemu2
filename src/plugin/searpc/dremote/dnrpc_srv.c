@@ -22,7 +22,6 @@
 #include <alloca.h>
 #include <errno.h>
 #include <sys/mman.h>
-#include <sys/socket.h>
 #include <searpc-server.h>
 #include <searpc-utils.h>
 #include "cpu.h"
@@ -96,22 +95,12 @@ static int exit_1_svc(void)
 
 static int read_ldt_1_svc(int bytecount)
 {
-    void *ptr = alloca(bytecount);
-    int ret = dnops->read_ldt(ptr, bytecount);
-
-    if (ret > 0)
-        ret = send(sock_rx, ptr, ret, 0);
-    return ret;
+    return dnops->read_ldt(rpc_shared_page, bytecount);
 }
 
 static int write_ldt_1_svc(int bytecount)
 {
-    void *ptr = alloca(bytecount);
-    int ret = recv(sock_rx, ptr, bytecount, 0);
-
-    if (ret > 0)
-        ret = dnops->write_ldt(ptr, bytecount);
-    return ret;
+    return dnops->write_ldt(rpc_shared_page, bytecount);
 }
 
 static int check_verr_1_svc(int selector)

@@ -16,7 +16,6 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
 #include <errno.h>
 #include <pthread.h>
 #include <searpc.h>
@@ -194,7 +193,7 @@ static int remote_read_ldt(void *ptr, int bytecount)
     pthread_mutex_unlock(&rpc_mtx);
     CHECK_RPC(error);
     if (ret > 0)
-        ret = recv(sock_tx, ptr, ret, 0);
+        memcpy(ptr, rpc_shared_page, ret);
     return ret;
 }
 
@@ -202,12 +201,7 @@ static int remote_write_ldt(void *ptr, int bytecount)
 {
     int ret;
     GError *error = NULL;
-    ret = send(sock_tx, ptr, bytecount, 0);
-    if (ret != bytecount) {
-        error("send() failed\n");
-        leavedos(6);
-        return -1;
-    }
+    memcpy(rpc_shared_page, ptr, bytecount);
     pthread_mutex_lock(&rpc_mtx);
     ret = searpc_client_call__int(clnt, "write_ldt_1",
                                   &error, 1,
