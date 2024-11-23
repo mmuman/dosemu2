@@ -161,9 +161,11 @@ static int remote_dpmi_control(cpuctx_t *scp)
     int ret;
     GError *error = NULL;
     send_state(scp);
+    in_rdpmi++;
     pthread_mutex_lock(&rpc_mtx);
     ret = searpc_client_call__int(clnt, "control_1", &error, 0);
     pthread_mutex_unlock(&rpc_mtx);
+    in_rdpmi--;
     CHECK_RPC(error);
     recv_state(scp);
     return ret;

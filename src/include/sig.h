@@ -188,6 +188,7 @@ void handle_fault(int sig, const siginfo_t *si, sigcontext_t *scp);
 extern pthread_t dosemu_pthread_self;
 extern pid_t dosemu_pid;
 extern pid_t dpmi_pid;
+extern int in_rdpmi;
 extern sigset_t q_mask;
 extern sigset_t nonfatal_q_mask;
 extern sigset_t all_sigmask;
