@@ -29,8 +29,10 @@
 #include "plugin_config.h"
 #include "utilities.h"
 #include "emu.h"
+#include "vgaemu.h"
 #include "searpc-signature.h"
 #include "searpc-marshal.h"
+#include "uffd.h"
 #include "dnrpcdefs.h"
 
 static int sock_rx;
@@ -38,16 +40,20 @@ static int sock_rx;
 static int mmap_1_svc(uint64_t addr, uint64_t length, int prot, int flags,
         uint64_t offset)
 {
+    void *targ = (void *)(uintptr_t)addr;
     int fd = recv_fd(sock_rx);
     void *ret;
 
     if (fd == -1)
         return -1;
-    ret = mmap((void *)(uintptr_t)addr, length, prot, flags, fd, offset);
+    memcpy(vga.mem.map, rpc_shared_page, sizeof(vga.mem.map));
+    ret = mmap(targ, length, prot, flags, fd, offset);
     if (ret == MAP_FAILED)
         perror("mmap()");
     close(fd);
-    return (ret == MAP_FAILED ? -1 : 0);
+    if (ret == MAP_FAILED)
+        return -1;
+    return uffd_reattach(sock_rx, targ, length);
 }
 
 static int mprotect_1_svc(uint64_t addr, uint64_t length, int prot)
@@ -152,6 +158,7 @@ int dnrpc_srv_init(const char *svc_name, int fd)
             "debug_breakpoint_1",
             searpc_signature_int__int_int());
 
+    uffd_open(fd);
     signal_init();
     dnops = NULL;
     plu = load_plugin("dnative");

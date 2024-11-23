@@ -25,7 +25,9 @@
 #include "plugin_config.h"
 #include "init.h"
 #include "emu.h"
+#include "vgaemu.h"
 #include "../util.h"
+#include "uffd.h"
 #include "dnrpcdefs.h"
 
 static SearpcClient *clnt;
@@ -33,6 +35,7 @@ static int sock_tx;
 static int exited;
 static pthread_mutex_t rpc_mtx = PTHREAD_MUTEX_INITIALIZER;
 void *rpc_shared_page;
+#define RPC_SHARED_SIZE PAGE_SIZE
 
 static int remote_mmap(void *addr, size_t length, int prot, int flags,
                        int fd, off_t offset);
@@ -66,8 +69,9 @@ static int remote_mmap(void *addr, size_t length, int prot, int flags,
 
     if (!clnt)
         return 0;
-    send_fd(sock_tx, fd);
     pthread_mutex_lock(&rpc_mtx);
+    send_fd(sock_tx, fd);
+    memcpy(rpc_shared_page, vga.mem.map, sizeof(vga.mem.map));
     ret = searpc_client_call__int(clnt, "mmap_1",
                                   &error, 5,
                                   "int64", &addr,
@@ -116,6 +120,7 @@ static const struct mapping_hook mhook = {
     .mmap = remote_mmap,
     .mprotect = remote_mprotect,
     .madvise = remote_madvise,
+    .wp_vga = uffd_wp,
 };
 
 static int remote_dpmi_setup(void)
@@ -125,7 +130,7 @@ static int remote_dpmi_setup(void)
 
     if (clnt)
         return -1;
-    rpc_shared_page = alloc_mapping(MAPPING_OTHER, PAGE_SIZE);
+    rpc_shared_page = alloc_mapping(MAPPING_OTHER, RPC_SHARED_SIZE);
     assert(rpc_shared_page != MAP_FAILED);
     clnt = clnt_init(&sock_tx, dnsrv_init, NULL, NULL, svc_ex, "dnrpc",
             &dpmi_pid);
@@ -134,6 +139,7 @@ static int remote_dpmi_setup(void)
         return -1;
     }
     pthread_mutex_lock(&rpc_mtx);
+    uffd_init(sock_tx);
     ret = searpc_client_call__int(clnt, "setup_1", &error, 0);
     pthread_mutex_unlock(&rpc_mtx);
     CHECK_RPC(error);
@@ -154,20 +160,24 @@ static int _remote_dpmi_done(void)
 static void remote_dpmi_done(void)
 {
     _remote_dpmi_done();
+    searpc_client_free(clnt);
+    clnt = NULL;
+    free_mapping(MAPPING_OTHER, rpc_shared_page, RPC_SHARED_SIZE);
+    rpc_shared_page = NULL;
 }
 
 static int remote_dpmi_control(cpuctx_t *scp)
 {
     int ret;
     GError *error = NULL;
+    pthread_mutex_lock(&rpc_mtx);
     send_state(scp);
     in_rdpmi++;
-    pthread_mutex_lock(&rpc_mtx);
     ret = searpc_client_call__int(clnt, "control_1", &error, 0);
-    pthread_mutex_unlock(&rpc_mtx);
     in_rdpmi--;
-    CHECK_RPC(error);
+    CHECK_RPC_LOCKED(error);
     recv_state(scp);
+    pthread_mutex_unlock(&rpc_mtx);
     return ret;
 }
 
@@ -175,12 +185,12 @@ static int remote_dpmi_exit(cpuctx_t *scp)
 {
     int ret;
     GError *error = NULL;
-    send_state(scp);
     pthread_mutex_lock(&rpc_mtx);
+    send_state(scp);
     ret = searpc_client_call__int(clnt, "exit_1", &error, 0);
-    pthread_mutex_unlock(&rpc_mtx);
-    CHECK_RPC(error);
+    CHECK_RPC_LOCKED(error);
     recv_state(scp);
+    pthread_mutex_unlock(&rpc_mtx);
     return ret;
 }
 
@@ -192,10 +202,10 @@ static int remote_read_ldt(void *ptr, int bytecount)
     ret = searpc_client_call__int(clnt, "read_ldt_1",
                                   &error, 1,
                                   "int", bytecount);
-    pthread_mutex_unlock(&rpc_mtx);
-    CHECK_RPC(error);
+    CHECK_RPC_LOCKED(error);
     if (ret > 0)
         memcpy(ptr, rpc_shared_page, ret);
+    pthread_mutex_unlock(&rpc_mtx);
     return ret;
 }
 
@@ -203,8 +213,8 @@ static int remote_write_ldt(void *ptr, int bytecount)
 {
     int ret;
     GError *error = NULL;
-    memcpy(rpc_shared_page, ptr, bytecount);
     pthread_mutex_lock(&rpc_mtx);
+    memcpy(rpc_shared_page, ptr, bytecount);
     ret = searpc_client_call__int(clnt, "write_ldt_1",
                                   &error, 1,
                                   "int", bytecount);
@@ -230,14 +240,14 @@ static int remote_debug_breakpoint(int op, cpuctx_t *scp, int err)
 {
     int ret;
     GError *error = NULL;
-    send_state(scp);
     pthread_mutex_lock(&rpc_mtx);
+    send_state(scp);
     ret = searpc_client_call__int(clnt, "debug_breakpoint_1",
                                   &error, 2,
                                   "int", op, "int", err);
-    pthread_mutex_unlock(&rpc_mtx);
-    CHECK_RPC(error);
+    CHECK_RPC_LOCKED(error);
     recv_state(scp);
+    pthread_mutex_unlock(&rpc_mtx);
     return ret;
 }
 

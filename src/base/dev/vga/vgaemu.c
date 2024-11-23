@@ -288,10 +288,10 @@
  * functions local to this file
  */
 
-static int vga_emu_protect(unsigned, unsigned, int);
+static int vga_emu_protect(unsigned, unsigned, int, int);
 static int vga_emu_map(unsigned, unsigned);
 static int _vga_emu_adjust_protection(unsigned page, unsigned mapped_page,
-	int prot, int dirty);
+	int prot, int dirty, int instremu);
 static void _vgaemu_dirty_page(int page, int dirty);
 #if 0
 static int vgaemu_unmap(unsigned);
@@ -1114,7 +1114,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
       }
       else {
         vga_msg("vga_emu_fault: unknown instruction, page at 0x%05x now writable\n", page_fault << 12);
-        vga_emu_protect_page(page_fault, RW);
+        vga_emu_protect_page(page_fault, RW, 1);
       }
       return True;
     }
@@ -1133,7 +1133,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
       }
       else {
         vga_msg("vga_emu_fault: unknown instruction, converting ROM to RAM at 0x%05x\n", page_fault << 12);
-        vga_emu_protect_page(page_fault, RW);
+        vga_emu_protect_page(page_fault, RW, 1);
       }
       return True;
     }
@@ -1149,7 +1149,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
   if(vga_page < vga.mem.pages) {
     if(!vga.inst_emu) {
       /* Normal: make the display page writeable then mark it dirty */
-      vga_emu_adjust_protection(vga_page, page_fault, RW, 1);
+      vga_emu_adjust_protection(vga_page, page_fault, RW, 1, 0);
     }
     if(vga.inst_emu) {
       int ret;
@@ -1174,7 +1174,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
           error_once("instruction simulation failure\n%s\n", DPMI_show_state(scp));
         else
           error_once0("instruction simulation failure\n");
-        vga_emu_adjust_protection(vga_page, page_fault, RW, 1);
+        vga_emu_adjust_protection(vga_page, page_fault, RW, 1, 1);
       }
     }
   }
@@ -1223,7 +1223,7 @@ static int vgaemu_prot_ok(unsigned page, int prot)
  *
  */
 
-int vga_emu_protect_page(unsigned page, int prot)
+int vga_emu_protect_page(unsigned page, int prot, int instremu)
 {
   int i;
   int sys_prot;
@@ -1254,10 +1254,17 @@ int vga_emu_protect_page(unsigned page, int prot)
     page < vga.mem.lfb_base_page + vga.mem.pages) {
     dosaddr_t p;
     p = vga.mem.lfb_base + ((page - vga.mem.lfb_base_page) << 12);
-    i = mprotect_mapping(MAPPING_VGAEMU, p, 1 << 12, sys_prot);
+    if (instremu)
+      i = mprotect_mapping(MAPPING_VGAEMU, p, 1 << 12, sys_prot);
+    else
+      i = mprotect_vga(VGAEMU_MAP_LFB_MODE, p, 1 << 12, sys_prot);
   }
   else {
-    i = mprotect_mapping(MAPPING_VGAEMU | MAPPING_LOWMEM, page << 12, 1 << 12, sys_prot);
+    if (instremu)
+      i = mprotect_mapping(MAPPING_VGAEMU | MAPPING_LOWMEM, page << 12,
+          1 << 12, sys_prot);
+    else
+      i = mprotect_vga(VGAEMU_MAP_BANK_MODE, page << 12, 1 << 12, sys_prot);
   }
 
   if(i == -1) {
@@ -1287,7 +1294,8 @@ int vga_emu_protect_page(unsigned page, int prot)
  *
  */
 
-static int vga_emu_protect(unsigned page, unsigned mapped_page, int prot)
+static int vga_emu_protect(unsigned page, unsigned mapped_page, int prot,
+	int instremu)
 {
   int i, j = 0, err, err_1 = 0, map_ok = 0;
 #if DEBUG_MAP >= 1
@@ -1307,7 +1315,7 @@ static int vga_emu_protect(unsigned page, unsigned mapped_page, int prot)
         k = 1;
 #endif
         if(vga.mem.map[i].base_page + j == mapped_page) map_ok = 1;
-        err = vga_emu_protect_page(vga.mem.map[i].base_page + j, prot);
+        err = vga_emu_protect_page(vga.mem.map[i].base_page + j, prot, instremu);
         if(!err_1) err_1 = err;
         vga_deb2_map(
           "vga_emu_protect: error = %d, region = %d, page = 0x%x --> map_addr = 0x%x, prot = %s\n",
@@ -1346,7 +1354,7 @@ static int vga_emu_protect(unsigned page, unsigned mapped_page, int prot)
  */
 
 static int _vga_emu_adjust_protection(const unsigned page, unsigned mapped_page,
-	int prot, int dirty)
+	int prot, int dirty, int instremu)
 {
   int i, err, k;
   unsigned page1 = page;
@@ -1356,14 +1364,14 @@ static int _vga_emu_adjust_protection(const unsigned page, unsigned mapped_page,
     return 1;
   }
 
-  i = vga_emu_protect(page, mapped_page, prot);
+  i = vga_emu_protect(page, mapped_page, prot, instremu);
 
   if(i == 3) {
     vga_msg(
       "vga_emu_adjust_protection: mapping inconsistency; page = 0x%x, map_addr != 0x%x\n",
       page, mapped_page
     );
-    err = vga_emu_protect_page(mapped_page, prot);
+    err = vga_emu_protect_page(mapped_page, prot, instremu);
     if(err) {
       vga_msg(
         "vga_emu_adjust_protection: mapping inconsistency not fixed; page = 0x%x, map_addr = 0x%x\n",
@@ -1375,35 +1383,35 @@ static int _vga_emu_adjust_protection(const unsigned page, unsigned mapped_page,
   if(vga.mem.planes == 4) {	/* MODE_X or PL4 */
     page1 &= ~0x30;
     for(k = 0; k < vga.mem.planes; k++, page1 += 0x10)
-      vga_emu_protect(page1, 0, prot);
+      vga_emu_protect(page1, 0, prot, instremu);
   }
 
   if(vga.mode_type == PL2) {
     /* it's actually 4 planes, but we let everyone believe it's a 1-plane mode */
     page1 &= ~0x30;
-    vga_emu_protect(page1, 0, prot);
+    vga_emu_protect(page1, 0, prot, instremu);
     page1 += 0x20;
-    vga_emu_protect(page1, 0, prot);
+    vga_emu_protect(page1, 0, prot, instremu);
   }
 
   if(vga.mode_type == CGA) {
     /* CGA uses two 8k banks  */
     page1 &= ~0x2;
-    vga_emu_protect(page1, 0, prot);
+    vga_emu_protect(page1, 0, prot, instremu);
     page1 += 0x2;
-    vga_emu_protect(page1, 0, prot);
+    vga_emu_protect(page1, 0, prot, instremu);
   }
 
   if(vga.mode_type == HERC) {
     /* Hercules uses four 8k banks  */
     page1 &= ~0x6;
-    vga_emu_protect(page1, 0, prot);
+    vga_emu_protect(page1, 0, prot, instremu);
     page1 += 0x2;
-    vga_emu_protect(page1, 0, prot);
+    vga_emu_protect(page1, 0, prot, instremu);
     page1 += 0x2;
-    vga_emu_protect(page1, 0, prot);
+    vga_emu_protect(page1, 0, prot, instremu);
     page1 += 0x2;
-    vga_emu_protect(page1, 0, prot);
+    vga_emu_protect(page1, 0, prot, instremu);
   }
 
   _vgaemu_dirty_page(page, dirty);
@@ -1411,12 +1419,12 @@ static int _vga_emu_adjust_protection(const unsigned page, unsigned mapped_page,
   return i;
 }
 
-int vga_emu_adjust_protection(unsigned page, unsigned mapped_page, int prot,
-	int dirty)
+int vga_emu_adjust_protection(unsigned page, unsigned mapped_page,
+	int prot, int dirty, int instremu)
 {
   int ret;
   vga_emu_prot_lock();
-  ret = _vga_emu_adjust_protection(page, mapped_page, prot, dirty);
+  ret = _vga_emu_adjust_protection(page, mapped_page, prot, dirty, instremu);
   vga_emu_prot_unlock();
   return ret;
 }
@@ -1483,6 +1491,8 @@ static int vga_emu_map(unsigned mapping, unsigned first_page)
       break;
   }
 
+  vmt->first_page = first_page;
+
   i = 0;
   pthread_mutex_lock(&prot_mtx);
   _vga_kvm_sync_dirty_map(mapping);
@@ -1492,7 +1502,7 @@ static int vga_emu_map(unsigned mapping, unsigned first_page)
       prot, vga.mem.base + (first_page << 12));
   else if (config.cpu_vm_dpmi != CPUVM_KVM)
     /* LFB: mapped at init, just need to set protection */
-    i = mprotect_mapping(MAPPING_VGAEMU, vmt->base_page << 12,
+    i = mprotect_vga(VGAEMU_MAP_LFB_MODE, vmt->base_page << 12,
 			 vmt->pages << 12, prot);
 
   if(i == -1) {
@@ -1501,14 +1511,12 @@ static int vga_emu_map(unsigned mapping, unsigned first_page)
     return 3;
   }
 
-  vmt->first_page = first_page;
-
   for(u = 0; u < vmt->pages; u++) {
     vgaemu_update_prot_cache(vmt->base_page + u, prot);
     /* need to fix up protection for clean pages */
     if(vga.mode_class == GRAPH && !vga.mem.dirty_map[vmt->first_page + u] &&
 	    prot == VGA_EMU_RW_PROT)
-      _vga_emu_adjust_protection(vmt->first_page + u, 0, VGA_PROT_RO, 0);
+      _vga_emu_adjust_protection(vmt->first_page + u, 0, VGA_PROT_RO, 0, 0);
   }
   pthread_mutex_unlock(&prot_mtx);
 
@@ -1949,7 +1957,7 @@ static int __vga_emu_update(vga_emu_update_type *veut, unsigned display_start,
     for (; i < vga.mem.pages; i++) {
       if (vga.mem.dirty_map[i]) {
         vga.mem.dirty_map[i] = 0;
-        _vga_emu_adjust_protection(i, 0, DEF_PROT, 0);
+        _vga_emu_adjust_protection(i, 0, DEF_PROT, 0, 0);
       }
     }
 #endif
@@ -1966,7 +1974,7 @@ static int __vga_emu_update(vga_emu_update_type *veut, unsigned display_start,
     else
       vga.mem.dirty_map[j] = 0;
     if (!vga.mem.dirty_map[j])
-      _vga_emu_adjust_protection(j, 0, DEF_PROT, 0);
+      _vga_emu_adjust_protection(j, 0, DEF_PROT, 0, 0);
   }
 
   vga_deb_update("vga_emu_update: update range: i = %d, j = %d\n", i, j);
@@ -2464,7 +2472,6 @@ static int __vga_emu_setmode(int mode, int width, int height)
     }
   }
 
-  dirty_all_video_pages();
   /* Put the mapping for the range 0xa0000 - 0xc0000 into some intial state:
    * the scratch page is mapped RW all over the place.
    */
@@ -2531,6 +2538,7 @@ static int __vga_emu_setmode(int mode, int width, int height)
   vgaemu_adj_cfg(CFG_MODE_CONTROL, 1);
 #endif
 
+  dirty_all_video_pages();  // do that last or it can clean up from thread
   vga_msg("vga_emu_setmode: mode initialized\n");
 
   return True;
@@ -2613,6 +2621,8 @@ int vgaemu_map_bank(void)
 
   i = vga_emu_map(VGAEMU_MAP_BANK_MODE, first);
   e_invalidate_full(0xa0000, 0x20000);
+  if (!vga.inst_emu)
+    dirty_all_video_pages();
 
   if(i) {
     vga_msg(
@@ -2883,7 +2893,7 @@ static void vgaemu_adjust_instremu(int value)
       v_printf("Seq_write_value: instemu on\n");
       pthread_mutex_lock(&prot_mtx);
       for (i = 0; i < vga.mem.pages; i++)
-	_vga_emu_adjust_protection(i, 0, NONE, 1);
+	_vga_emu_adjust_protection(i, 0, NONE, 1, 1);
       pthread_mutex_unlock(&prot_mtx);
     }
   } else {

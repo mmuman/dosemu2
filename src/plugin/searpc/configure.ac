@@ -20,4 +20,19 @@ AC_PATH_PROGS([RPCGEN], [searpc-codegen searpc-codegen.py],
   [AC_MSG_ERROR(searpc-codegen not found)])
 AC_SUBST(RPCGEN)
 
+AC_MSG_CHECKING([remote DPMI])
+CONFIG_HOST=`uname -s`
+machine=`cc -dumpmachine | cut -d- -f1 | sed 's/i.86/i386/'`
+if test "$CONFIG_HOST" = "Linux"; then
+  if test "$machine" = "i386" -o "$machine" = "x86_64"; then
+    AC_MSG_RESULT([supported])
+    DREMOTE=1
+    AC_SUBST(DREMOTE)
+  else
+    AC_MSG_RESULT([unsupported arch])
+  fi
+else
+  AC_MSG_RESULT([unsupported host])
+fi
+
 AC_OUTPUT

@@ -70,6 +70,10 @@ int native_dpmi_setup(void)
         return -1;
     }
     ret = dnops->setup();
+    if (ret) {
+        dnops = NULL;
+        return ret;
+    }
     check_ldt();
     return ret;
 }
