@@ -1137,9 +1137,6 @@ int e_dpmi(cpuctx_t *scp)
     }
     else if (xval==EXCP_GOBACK) {
         retval = DPMI_RET_DOSEMU;
-    }
-    else if (xval == EXCP0E_PAGE && vga_emu_fault(_cr2,_err,scp)==True) {
-	retval = DPMI_RET_CLIENT;
     } else {
 	retval = DPMI_RET_FAULT;
     }
