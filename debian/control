@@ -34,6 +34,7 @@ Build-Depends:
     libacl1-dev,
     libcap-dev,
     libcap2-bin,
+    libseccomp-dev,
     libglib2.0-dev,
     libsearpc-dev,
     binutils-dev,
