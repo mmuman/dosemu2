@@ -931,7 +931,7 @@ static void config_post_process(void)
 	vm86s.cpu_type = config.realcpu;
 	fprintf(stderr, "CONF: emulated CPU forced down to real CPU: %d86\n",(int)vm86s.cpu_type);
     }
-    if (config.cpu_vm_dpmi == CPUVM_NATIVE) {
+    if (config.cpu_vm_dpmi == CPUVM_NATIVE && !config.dpmi_remote) {
 #ifdef DNATIVE
       error("@Security warning: native DPMI mode is insecure, "
           "adjust $_cpu_vm_dpmi\n");

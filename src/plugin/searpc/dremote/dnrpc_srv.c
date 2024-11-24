@@ -33,6 +33,7 @@
 #include "searpc-signature.h"
 #include "searpc-marshal.h"
 #include "uffd.h"
+#include "sc_filter.h"
 #include "dnrpcdefs.h"
 
 static int sock_rx;
@@ -129,6 +130,7 @@ static int debug_breakpoint_1_svc(int op, int err)
 int dnrpc_srv_init(const char *svc_name, int fd)
 {
     void *plu;
+    int err;
     sock_rx = fd;
     searpc_server_init(register_marshals);
     searpc_create_service(svc_name);
@@ -162,5 +164,10 @@ int dnrpc_srv_init(const char *svc_name, int fd)
     signal_init();
     dnops = NULL;
     plu = load_plugin("dnative");
+    err = scf_start();
+    if (err) {
+        fprintf(stderr, "failure starting seccomp\n");
+        return -1;
+    }
     return (plu ? 0 : -1);
 }

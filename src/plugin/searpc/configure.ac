@@ -26,8 +26,12 @@ machine=`cc -dumpmachine | cut -d- -f1 | sed 's/i.86/i386/'`
 if test "$CONFIG_HOST" = "Linux"; then
   if test "$machine" = "i386" -o "$machine" = "x86_64"; then
     AC_MSG_RESULT([supported])
-    DREMOTE=1
-    AC_SUBST(DREMOTE)
+    PKG_CHECK_MODULES([SECCOMP], [libseccomp], [
+        DREMOTE=1
+        AC_SUBST(DREMOTE)
+      ],
+      [ AC_MSG_WARN(libseccomp-devel not found) ]
+    )
   else
     AC_MSG_RESULT([unsupported arch])
   fi
