@@ -753,9 +753,9 @@ static void Logical_VGA_write(unsigned offset, unsigned char value)
 
   if(MapMask) {
     // not optimal, but works better with update function -- sw
-    if (debug_level('v') >= 9)
-        vga_deb_map("LogicalWrite dirty page %i\n", vga_page);
     pthread_mutex_lock(&prot_mtx);
+    if (debug_level('v') >= 9 && !vga.mem.dirty_map[vga_page])
+        vga_deb_map("LogicalWrite dirty page %i\n", vga_page);
     vga.mem.dirty_map[vga_page] = 1;
     vga.mem.dirty_map[vga_page + 0x10] = 1;
     vga.mem.dirty_map[vga_page + 0x20] = 1;
