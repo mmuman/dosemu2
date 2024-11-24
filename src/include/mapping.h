@@ -81,6 +81,7 @@ int alias_mapping_high(int cap, dosaddr_t targ, size_t mapsize, int protect,
     void *source);
 int munmap_mapping(int cap, dosaddr_t targ, size_t mapsize);
 int mprotect_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect);
+int mprotect_vga(int idx, dosaddr_t targ, size_t mapsize, int protect);
 int restore_mapping(int cap, dosaddr_t targ, size_t mapsize);
 /* below wrapper is needed only for remoting the mapping subsystem */
 void *mmap_shm_ux(void *addr, size_t length, int prot, int fd);
@@ -89,10 +90,12 @@ typedef int mmap_hook_type(void *addr, size_t length, int prot,
                            int flags, int fd, off_t offset);
 typedef int mprotect_hook_type(void *addr, size_t length, int prot);
 typedef int madvise_hook_type(void *addr, size_t length, int prot);
+typedef int wp_hook_type(int idx, void *addr, size_t length, int wp);
 struct mapping_hook {
   mmap_hook_type *mmap;
   mprotect_hook_type *mprotect;
   madvise_hook_type *madvise;
+  wp_hook_type * wp_vga;
 };
 void mapping_register_hook(const struct mapping_hook *hook);
 

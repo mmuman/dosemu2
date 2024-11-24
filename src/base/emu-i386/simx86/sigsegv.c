@@ -200,7 +200,7 @@ static int e_vgaemu_fault(sigcontext_t *scp, unsigned page_fault)
       _scp_rip += u;
       if (u==0) {
         e_printf("eVGAEmuFault: unknown instruction, page at 0x%05x now writable\n", page_fault << 12);
-        vga_emu_protect_page(page_fault, 2);
+        vga_emu_protect_page(page_fault, VGA_PROT_RW, 1);
 /**/	leavedos_main(0x5640);
       }
       return 1;
@@ -210,7 +210,7 @@ static int e_vgaemu_fault(sigcontext_t *scp, unsigned page_fault)
       _scp_rip += u;
       if (u==0 || (_scp_err&2)==0) {
         e_printf("eVGAEmuFault: unknown instruction, converting ROM to RAM at 0x%05x\n", page_fault << 12);
-        vga_emu_protect_page(page_fault, 2);
+        vga_emu_protect_page(page_fault, VGA_PROT_RW, 1);
 /**/	leavedos_main(0x5641);
       }
       return 1;

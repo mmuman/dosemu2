@@ -80,6 +80,7 @@ static struct io_dev_struct io_devices[MAX_IO_DEVICES] = {
   { "hdisk",   hdisk_init,   hdisk_reset,   NULL },
 #endif
   { "disks",   disk_init,    disk_reset,    NULL },
+  { "video",   video_post_init, NULL, NULL },
   { "sound",   sound_init,   sound_reset,   sound_done },
   { "mt32",    mt32_init,    mt32_reset,    mt32_done },
   { "joystick", joy_init,    joy_reset,     joy_term },
@@ -94,7 +95,6 @@ static struct io_dev_struct io_devices[MAX_IO_DEVICES] = {
   { "dpmi",    dpmi_setup,   dpmi_reset,    NULL },
   { "mfs",     NULL,         mfs_reset,     mfs_done },
   { "cdrom",   NULL,         NULL,          cdrom_done },
-  { "video",   video_post_init, NULL, NULL },
   { "internal_mouse",  dosemu_mouse_init,   dosemu_mouse_reset, dosemu_mouse_close },
   { NULL,      NULL,         NULL,          NULL }
 };

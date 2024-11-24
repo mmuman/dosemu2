@@ -6,15 +6,16 @@ SearpcClient *clnt_init(int *sock_rx, init_cb_t init_cb,
         void *init_arg, int (*svc_ex)(void),
         void (*ex_cb)(void *), const char *svc_name, pid_t *r_pid);
 
-#define BAD_RPC(msg) do { \
-    bad_rpc(__FUNCTION__, msg); \
-    return -1; \
-} while (0)
-#define CHECK_RPC(st) do { \
+#define _CHECK_RPC(st, c) do { \
     if (st) { \
-        BAD_RPC(st->message); \
+        c \
+        bad_rpc(__FUNCTION__, st->message); \
         g_error_free(st); \
+        return -1; \
     } \
 } while (0)
+
+#define CHECK_RPC(st) _CHECK_RPC(st,)
+#define CHECK_RPC_LOCKED(st) _CHECK_RPC(st, pthread_mutex_unlock(&rpc_mtx);)
 
 #endif

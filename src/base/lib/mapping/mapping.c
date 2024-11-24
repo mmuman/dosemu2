@@ -1118,3 +1118,17 @@ void *mmap_shm_ux(void *addr, size_t length, int prot, int fd)
 {
   return mmap_shm_hook(addr, length, prot, MAP_SHARED | MAP_FIXED, fd, 0);
 }
+
+int mprotect_vga(int idx, dosaddr_t targ, size_t mapsize, int protect)
+{
+  void *addr = MEM_BASE32(targ);
+  int wp = !(protect & PROT_WRITE);
+  int err;
+
+  err = mprotect(addr, mapsize, protect);
+  if (err)
+    return err;
+  if (mapping_hook)
+    err = mapping_hook->wp_vga(idx, addr, mapsize, wp);
+  return err;
+}

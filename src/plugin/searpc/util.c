@@ -136,15 +136,15 @@ static void svc_run(const char *svc_name, int transp_fd, int (*exiting)(void))
         gsize len = 0;
         ssize_t rd = recv(transp_fd, buf, sizeof(buf), 0);
         if (rd <= 0)
-            exit(0);
+            _exit(0);
         json = searpc_server_call_function(svc_name, buf, rd, &len);
         if (!len)
-            exit(0);
+            _exit(0);
         rd = send(transp_fd, json, len, 0);
         free(json);
         if (rd <= 0)
-            exit(0);
+            _exit(0);
         if (exiting && exiting())
-            exit(0);
+            _exit(0);
     }
 }
