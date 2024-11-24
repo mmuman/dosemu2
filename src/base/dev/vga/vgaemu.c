@@ -2594,6 +2594,7 @@ int vgaemu_map_bank(void)
   else {
     first = vga.mem.bank_pages * vga.mem.bank;
   }
+  vga.mem.map[VGAEMU_MAP_BANK_MODE].first_page = first;
 
 #if 0
   /*
@@ -2895,6 +2896,7 @@ static void vgaemu_adjust_instremu(int value)
   } else {
     if (vga.inst_emu != 0) {
       v_printf("Seq_write_value: instemu off\n");
+      vgaemu_map_bank();	// mapping was disabled, so restore
       dirty_all_video_pages();
     }
   }
@@ -2932,7 +2934,6 @@ void vgaemu_adj_cfg(unsigned what, unsigned msg)
         vga.mem.planes = u1;
         vga.reconfig.mem = 1;
         vga_msg("vgaemu_adj_cfg: mem reconfig (%u planes)\n", u1);
-        vgaemu_map_bank();	// update page protection
       }
       vgaemu_adjust_instremu(vga.mem.planes > 1 ? EMU_ALL_INST : 0);
       if(msg || u != u0) vga_msg("vgaemu_adj_cfg: seq.addr_mode = %s\n", txt1[u]);
@@ -3158,7 +3159,6 @@ void vgaemu_adj_cfg(unsigned what, unsigned msg)
       }
       old_color_bits = vga.color_bits;
       vga.color_bits = vga.pixel_size;
-      vgaemu_map_bank();      // update page protection
       vgaemu_adjust_instremu((vga.mode_type==PL4 || vga.mode_type==PL2)
 			     ? EMU_ALL_INST : 0);
       if (oldclass != vga.mode_class) {
