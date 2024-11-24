@@ -1225,8 +1225,9 @@ void cpuemu_update_fpu(void)
 /* set special SIM mode for VGAEMU faults */
 int instr_emu_sim(cpuctx_t *scp, int pmode, int cnt)
 {
+  int be = (pmode ? config.cpu_vm_dpmi : config.cpu_vm);
   instr_emu_sim_reset_count(cnt);
-  if (config.cpu_vm == CPUVM_KVM || config.cpu_vm_dpmi == CPUVM_KVM)
+  if (be == CPUVM_KVM)
     kvm_leave(pmode);
   /* this changes CONFIG_CPUSIM value, so should be before init */
   CEmuStat |= CeS_INSTREMU;
@@ -1250,7 +1251,7 @@ int instr_emu_sim(cpuctx_t *scp, int pmode, int cnt)
     init_emu_npu();
   }
 #endif
-  if (config.cpu_vm == CPUVM_KVM || config.cpu_vm_dpmi == CPUVM_KVM)
+  if (be == CPUVM_KVM)
     kvm_enter(pmode);
   return True;
 }
