@@ -7,7 +7,7 @@ import re
 
 from datetime import datetime
 from difflib import unified_diff
-from os import statvfs, uname, utime, environ, access, R_OK, W_OK
+from os import statvfs, utime, environ
 from os.path import exists, isdir, join
 from pathlib import Path
 from shutil import copy
@@ -19,6 +19,7 @@ from common_framework import (BaseTestCase, get_test_binaries, main, mkstring,
                               IPROMPT, KNOWNFAIL, UNSUPPORTED)
 
 from func_cpu_trap_flag import cpu_trap_flag
+from func_cpu_methods import cpu_create_items
 from func_ds2_file_seek_tell import ds2_file_seek_tell
 from func_ds2_file_seek_read import ds2_file_seek_read
 from func_ds2_set_fattrs import ds2_set_fattrs
@@ -4745,108 +4746,6 @@ $_floppy_a = ""
         network_pktdriver_mtcp(self, 'ne2000')
     test_network_pktdriver_mtcp_ne2000.nettest = True
 
-    def _test_cpu(self, cpu_vm, cpu_vm_dpmi, cpu_emu):
-        if ('kvm' in cpu_vm or 'kvm' in cpu_vm_dpmi) and not access("/dev/kvm", W_OK|R_OK):
-            self.skipTest("requires KVM")
-        if cpu_vm == 'vm86' and uname()[4] != 'i686':
-            self.skipTest("native vm86() only on 32bit x86")
-
-        edir = self.topdir / "test" / "cpu"
-
-        # Native reference file is now checked in to git and will
-        # only need to be updated if the test source changes. We open()
-        # here without try/except as if it's missing we should 'ERROR'
-        # not 'FAIL'
-        reffile = edir / "reffile.log"
-        refoutput = []
-        with reffile.open("r") as f:
-            refoutput = f.readlines()
-
-        # DOS test binary is built as part of normal build process
-        copy(edir / "dosbin.exe", self.workdir / "dosbin.exe")
-        dosfile = self.workdir / "dosfile.log"
-
-        # output from DOS under test
-        self.mkfile("testit.bat", """\
-dosbin --common-tests > %s
-rem end
-""" % dosfile.name, newline="\r\n")
-
-        self.runDosemu("testit.bat", timeout=20, config="""\
-$_hdimage = "dXXXXs/c:hdtype1 +1"
-$_floppy_a = ""
-$_cpu_vm = "%s"
-$_cpu_vm_dpmi = "%s"
-$_cpuemu = (%i)
-$_ignore_djgpp_null_derefs = (off)
-"""%(cpu_vm, cpu_vm_dpmi, cpu_emu))
-
-        try:
-            with dosfile.open("r") as f:
-                dosoutput = f.readlines()
-        except Exception as e:   # Ensure we 'FAIL' not 'ERROR'
-            raise self.failureException(e) from None
-
-        # Compare DOS output to reference file
-        if dosoutput != refoutput:
-            diff = unified_diff(refoutput, dosoutput, fromfile=reffile.name, tofile=dosfile.name)
-            self.fail('differences detected\n' + ''.join(list(diff)))
-
-    def test_cpu_1_vm86native(self):
-        """CPU native vm86 + native DPMI (i386 only)"""
-        self._test_cpu("vm86", "native", 0)
-    test_cpu_1_vm86native.cputest = True
-
-    def test_cpu_2_jitnative(self):
-        """CPU JIT vm86 + native DPMI"""
-        self._test_cpu("emulated", "native", 0)
-    test_cpu_2_jitnative.cputest = True
-
-    def test_cpu_jitkvm(self):
-        """CPU JIT vm86 + KVM DPMI"""
-        self._test_cpu("emulated", "kvm", 0)
-    test_cpu_jitkvm.cputest = True
-
-    def test_cpu_simnative(self):
-        """CPU simulated vm86 + native DPMI"""
-        self._test_cpu("emulated", "native", 1)
-    test_cpu_simnative.cputest = True
-
-    def test_cpu_simkvm(self):
-        """CPU simulated vm86 + KVM DPMI"""
-        self._test_cpu("emulated", "kvm", 1)
-    test_cpu_simkvm.cputest = True
-
-    def test_cpu_kvmnative(self):
-        """CPU KVM vm86 + native DPMI"""
-        self._test_cpu("kvm", "native", 0)
-    test_cpu_kvmnative.cputest = True
-
-    def test_cpu_kvm(self):
-        """CPU KVM vm86 + KVM DPMI"""
-        self._test_cpu("kvm", "kvm", 0)
-    test_cpu_kvm.cputest = True
-
-    def test_cpu_kvmjit(self):
-        """CPU KVM vm86 + JIT DPMI"""
-        self._test_cpu("kvm", "emulated", 0)
-    test_cpu_kvmjit.cputest = True
-
-    def test_cpu_kvmsim(self):
-        """CPU KVM vm86 + simulated DPMI"""
-        self._test_cpu("kvm", "emulated", 1)
-    test_cpu_kvmsim.cputest = True
-
-    def test_cpu_jit(self):
-        """CPU JIT vm86 + JIT DPMI"""
-        self._test_cpu("emulated", "emulated", 0)
-    test_cpu_jit.cputest = True
-
-    def test_cpu_sim(self):
-        """CPU simulated vm86 + simulated DPMI"""
-        self._test_cpu("emulated", "emulated", 1)
-    test_cpu_sim.cputest = True
-
     def test_cpu_trap_flag_emulated(self):
         """CPU Trap Flag emulated"""
         cpu_trap_flag(self, 'emulated')
@@ -5506,8 +5405,9 @@ class PPDOSGITTestCase(OurTestCase, unittest.TestCase):
 
 if __name__ == '__main__':
 
-    # Dynamically create libi86 tests
+    # Dynamically create tests
     libi86_create_items(OurTestCase)
+    cpu_create_items(OurTestCase)
 
     tests = [t[0] for t in
             inspect.getmembers(OurTestCase, predicate=inspect.isfunction)
