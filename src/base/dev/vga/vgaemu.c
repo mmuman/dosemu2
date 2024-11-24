@@ -2614,10 +2614,11 @@ int vgaemu_map_bank(void)
   }
 #endif
 
+  /* for inst_emu the real mapping doesn't matter, so save some time */
+  if (vga.inst_emu)
+    return False;
   i = vga_emu_map(VGAEMU_MAP_BANK_MODE, first);
   e_invalidate_full(0xa0000, 0x20000);
-  if (!vga.inst_emu)
-    dirty_all_video_pages();
 
   if(i) {
     vga_msg(
