@@ -1386,7 +1386,7 @@ int kvm_vm86(struct vm86_struct *info)
 #if USE_INSTREMU
     dosaddr_t addr = (dosaddr_t)run->mmio.phys_addr;
     if (vga.inst_emu && vga_access(addr, addr))
-      instr_emu_sim(NULL, 0, VGA_EMU_INST_EMU_COUNT);
+      instr_emu_sim(NULL, 0);
 #endif
   }
   return vm86_ret;
@@ -1501,7 +1501,7 @@ int kvm_dpmi(cpuctx_t *scp)
     } else if (exit_reason == KVM_EXIT_MMIO) {
       dosaddr_t addr = (dosaddr_t)run->mmio.phys_addr;
       if (vga.inst_emu && vga_access(addr, addr))
-        instr_emu_sim(scp, 1, VGA_EMU_INST_EMU_COUNT);
+        instr_emu_sim(scp, 1);
       ret = DPMI_RET_CLIENT;
     }
   } while (!signal_pending() && ret == DPMI_RET_CLIENT);

@@ -82,7 +82,7 @@ static void *alias_mapping_file(int cap, void *target, size_t mapsize, int prote
   else
     target = NULL;
   /* /dev/shm may be mounted noexec, and then mounting PROT_EXEC fails. */
-  addr = mmap_shm_hook(target, mapsize, protect,
+  addr = mmap_shm_hook(cap, target, mapsize, protect,
           MAP_SHARED | fixed, p->fd, offs);
   if (addr == MAP_FAILED) {
     int errn = errno;

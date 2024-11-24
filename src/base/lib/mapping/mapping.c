@@ -1072,7 +1072,7 @@ void mapping_register_hook(const struct mapping_hook *hook)
   mapping_hook = hook;
 }
 
-void *mmap_shm_hook(void *addr, size_t length, int prot, int flags,
+void *mmap_shm_hook(int cap, void *addr, size_t length, int prot, int flags,
                     int fd, off_t offset)
 {
   int err = 0;
@@ -1080,6 +1080,9 @@ void *mmap_shm_hook(void *addr, size_t length, int prot, int flags,
   if (ret != addr || (unsigned char *)addr < mem_bases[MEM_BASE].base ||
       (unsigned char *)addr + length > mem_bases[MEM_BASE].base +
       mem_bases[MEM_BASE].size)
+    return ret;
+  /* optimization: if we run on cpu-emu (eg instr_emu_sim()), skip the hook */
+  if (cap & MAPPING_CPUEMU)
     return ret;
   if (mapping_hook)
     err = mapping_hook->mmap(addr, length, prot, flags, fd, offset);
@@ -1116,7 +1119,8 @@ static int madvise_hook(void *addr, size_t length, int flags)
 
 void *mmap_shm_ux(void *addr, size_t length, int prot, int fd)
 {
-  return mmap_shm_hook(addr, length, prot, MAP_SHARED | MAP_FIXED, fd, 0);
+  return mmap_shm_hook(MAPPING_SHARED, addr, length, prot,
+      MAP_SHARED | MAP_FIXED, fd, 0);
 }
 
 int mprotect_vga(int idx, dosaddr_t targ, size_t mapsize, int protect)

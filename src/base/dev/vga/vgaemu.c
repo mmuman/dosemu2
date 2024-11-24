@@ -609,7 +609,7 @@ static Bit32u color2pixels[16] = {0,0xff,0xff00,0xffff,0xff0000,0xff00ff,0xffff0
 
 static unsigned char Logical_VGA_read(unsigned offset)
 {
-  instr_emu_sim_reset_count(VGA_EMU_INST_EMU_COUNT);
+  instr_emu_sim_reset_count();
 
   switch (ReadMode) {
     case 0: /* read mode 0 */
@@ -731,7 +731,7 @@ static void Logical_VGA_write(unsigned offset, unsigned char value)
   unsigned char *p;
   Bit32u new_val;
 
-  instr_emu_sim_reset_count(VGA_EMU_INST_EMU_COUNT);
+  instr_emu_sim_reset_count();
 
   new_val = Logical_VGA_CalcNewVal(value);
 
@@ -1167,7 +1167,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
        * while we are using X.  Leave the display page read/write-protected
        * so that each instruction that accesses it can be trapped and
        * simulated. */
-      instr_emu_sim(scp, pmode, VGA_EMU_INST_EMU_COUNT);
+      instr_emu_sim(scp, pmode);
     }
   }
   return True;
@@ -1488,11 +1488,14 @@ static int vga_emu_map(unsigned mapping, unsigned first_page)
   i = 0;
   pthread_mutex_lock(&prot_mtx);
   _vga_kvm_sync_dirty_map(mapping);
-  if (mapping == VGAEMU_MAP_BANK_MODE)
-    i = alias_mapping(MAPPING_VGAEMU,
+  if (mapping == VGAEMU_MAP_BANK_MODE) {
+    int cap = MAPPING_VGAEMU;
+    if (vga.inst_emu && interp_inst_emu_count)
+      cap |= MAPPING_CPUEMU;
+    i = alias_mapping(cap,
       vmt->base_page << 12, vmt->pages << 12,
       prot, vga.mem.base + (first_page << 12));
-  else if (config.cpu_vm_dpmi != CPUVM_KVM)
+  } else if (config.cpu_vm_dpmi != CPUVM_KVM)
     /* LFB: mapped at init, just need to set protection */
     i = mprotect_vga(VGAEMU_MAP_LFB_MODE, vmt->base_page << 12,
 			 vmt->pages << 12, prot);

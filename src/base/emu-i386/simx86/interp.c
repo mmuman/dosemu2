@@ -622,9 +622,15 @@ static unsigned int interp_post(unsigned int PC, const int mode,
 					dbug_printf("CeS_INSTREMU, count=%d\n",
 						    interp_inst_emu_count);
 				if (--interp_inst_emu_count == 0) {
-					instr_sim_leave(PROTMODE());
-					TheCPU.err = EXCP_GOBACK;
-					return PC;
+					int prot = PROTMODE();
+					if (prot && config.dpmi_remote &&
+							vga.inst_emu) {
+						instr_emu_sim_reset_count();
+					} else {
+						instr_sim_leave(prot);
+						TheCPU.err = EXCP_GOBACK;
+						return PC;
+					}
 				}
 			}
 		}
@@ -3519,7 +3525,7 @@ illegal_op:
 }
 
 /* reset for VGA reads and writes */
-void instr_emu_sim_reset_count(int cnt)
+void instr_emu_sim_reset_count(void)
 {
-	interp_inst_emu_count = cnt;
+	interp_inst_emu_count = VGA_EMU_INST_EMU_COUNT;
 }

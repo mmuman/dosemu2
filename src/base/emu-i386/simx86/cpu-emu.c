@@ -1220,10 +1220,10 @@ void cpuemu_update_fpu(void)
 }
 
 /* set special SIM mode for VGAEMU faults */
-void instr_emu_sim(cpuctx_t *scp, int pmode, int cnt)
+void instr_emu_sim(cpuctx_t *scp, int pmode)
 {
   int be = (pmode ? config.cpu_vm_dpmi : config.cpu_vm);
-  instr_emu_sim_reset_count(cnt);
+  instr_emu_sim_reset_count();
   if (be == CPUVM_KVM)
     kvm_leave(pmode);
   /* this changes CONFIG_CPUSIM value, so should be before init */
