@@ -1152,7 +1152,6 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
       vga_emu_adjust_protection(vga_page, page_fault, RW, 1, 0);
     }
     if(vga.inst_emu) {
-      int ret;
 #if 1
       /* XXX Hack: dosemu touched the protected page of video mem, which is
        * a bug. However for the video modes that do not require instremu, we
@@ -1168,14 +1167,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
        * while we are using X.  Leave the display page read/write-protected
        * so that each instruction that accesses it can be trapped and
        * simulated. */
-      ret = instr_emu_sim(scp, pmode, VGA_EMU_INST_EMU_COUNT);
-      if (!ret) {
-        if (pmode)
-          error_once("instruction simulation failure\n%s\n", DPMI_show_state(scp));
-        else
-          error_once0("instruction simulation failure\n");
-        vga_emu_adjust_protection(vga_page, page_fault, RW, 1, 1);
-      }
+      instr_emu_sim(scp, pmode, VGA_EMU_INST_EMU_COUNT);
     }
   }
   return True;

@@ -47,7 +47,7 @@ int EmuSignals = 0;
 
 /* countdown to exit after handling VGAEMU faults, reset by
    planar VGA reads and writes */
-static int interp_inst_emu_count;
+int interp_inst_emu_count;
 
 static int ArOpsR[] =
 	{ O_ADD_R, O_OR_R, O_ADC_R, O_SBB_R, O_AND_R, O_SUB_R, O_XOR_R, O_CMP_R };
@@ -621,7 +621,8 @@ static unsigned int interp_post(unsigned int PC, const int mode,
 				if (debug_level('e')>1)
 					dbug_printf("CeS_INSTREMU, count=%d\n",
 						    interp_inst_emu_count);
-				if (interp_inst_emu_count-- == 0) {
+				if (--interp_inst_emu_count == 0) {
+					instr_sim_leave(PROTMODE());
 					TheCPU.err = EXCP_GOBACK;
 					return PC;
 				}

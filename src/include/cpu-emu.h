@@ -101,8 +101,10 @@ int e_dpmi(cpuctx_t *scp);
 void e_dpmi_b0x(int op,cpuctx_t *scp);
 
 /* called/used from vgaemu.c */
-int instr_emu_sim(cpuctx_t *scp, int pmode, int cnt);
+void instr_emu_sim(cpuctx_t *scp, int pmode, int cnt);
+void instr_sim_leave(int pmode);
 void instr_emu_sim_reset_count(int cnt);
+extern int interp_inst_emu_count;
 
 void cpuemu_enter(int pm);
 void cpuemu_leave(int pm);

@@ -619,12 +619,13 @@ static int do_dpmi_switch(cpuctx_t *scp)
       D_printf("DPMI: Return to client at %04x:%08x, Stack 0x%x:0x%08x, flags=%#x\n",
                    _cs, _eip, _ss, _esp, _eflags);
   }
+#ifdef X86_EMULATOR
+  if (config.cpu_vm_dpmi == CPUVM_EMU || interp_inst_emu_count)
+    ret = e_dpmi(scp);
+  else
+#endif
   if (config.cpu_vm_dpmi == CPUVM_KVM)
     ret = kvm_dpmi(scp);
-#ifdef X86_EMULATOR
-  else if (config.cpu_vm_dpmi == CPUVM_EMU)
-    ret = e_dpmi(scp);
-#endif
   else
     ret = native_dpmi_control(scp);
   if (debug_level('M') > 5)
