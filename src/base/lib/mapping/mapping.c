@@ -1081,9 +1081,6 @@ void *mmap_shm_hook(int cap, void *addr, size_t length, int prot, int flags,
       (unsigned char *)addr + length > mem_bases[MEM_BASE].base +
       mem_bases[MEM_BASE].size)
     return ret;
-  /* optimization: if we run on cpu-emu (eg instr_emu_sim()), skip the hook */
-  if (cap & MAPPING_CPUEMU)
-    return ret;
   if (mapping_hook)
     err = mapping_hook->mmap(addr, length, prot, flags, fd, offset);
   if (err) {
