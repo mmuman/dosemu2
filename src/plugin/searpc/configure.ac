@@ -20,23 +20,44 @@ AC_PATH_PROGS([RPCGEN], [searpc-codegen searpc-codegen.py],
   [AC_MSG_ERROR(searpc-codegen not found)])
 AC_SUBST(RPCGEN)
 
-AC_MSG_CHECKING([remote DPMI])
+AC_MSG_CHECKING([for remote DPMI-compatible host])
 CONFIG_HOST=`uname -s`
 machine=`cc -dumpmachine | cut -d- -f1 | sed 's/i.86/i386/'`
-if test "$CONFIG_HOST" = "Linux"; then
-  if test "$machine" = "i386" -o "$machine" = "x86_64"; then
-    AC_MSG_RESULT([supported])
-    PKG_CHECK_MODULES([SECCOMP], [libseccomp], [
-        DREMOTE=1
-        AC_SUBST(DREMOTE)
-      ],
-      [ AC_MSG_WARN(libseccomp-devel not found) ]
-    )
-  else
+if test "$CONFIG_HOST" != "Linux"; then
+  nok=1
+  AC_MSG_RESULT([unsupported host])
+fi
+if test "$nok" != "1"; then
+  if test "$machine" != "i386" -a "$machine" != "x86_64"; then
+    nok=1
     AC_MSG_RESULT([unsupported arch])
   fi
+fi
+if test "$nok" != "1"; then
+  AC_MSG_RESULT([ok])
 else
-  AC_MSG_RESULT([unsupported host])
+  AC_MSG_RESULT([unsuitable])
+fi
+if test "$nok" != "1"; then
+  PKG_CHECK_MODULES([SECCOMP], [libseccomp],,
+    [
+      nok=1
+      AC_MSG_WARN(libseccomp-devel not found)
+    ]
+  )
+fi
+if test "$nok" != "1"; then
+  AC_CHECK_DECLS([UFFD_FEATURE_WP_HUGETLBFS_SHMEM],,
+    [
+      nok=1
+      AC_MSG_WARN(uffd not supported)
+    ], [[#include <linux/userfaultfd.h>]]
+  )
+fi
+if test "$nok" != "1"; then
+  AC_MSG_NOTICE([remote DPMI supported])
+  DREMOTE=1
+  AC_SUBST(DREMOTE)
 fi
 
 AC_OUTPUT
