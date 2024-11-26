@@ -1793,6 +1793,8 @@ static int vga_emu_post_init(void)
 {
   if(vga.mem.lfb_base != 0) {
     vga.mem.lfb_base_page = vga.mem.lfb_base >> 12;
+    vga.mem.map[VGAEMU_MAP_LFB_MODE].base_page = vga.mem.lfb_base_page;
+    vga.mem.map[VGAEMU_MAP_LFB_MODE].pages = vga.mem.pages;
   }
   vga_emu_setup_mode_table();
 
@@ -2497,9 +2499,6 @@ static int __vga_emu_setmode(int mode, int width, int height)
   vgaemu_adjust_instremu((vga.mode_type==PL4 || vga.mode_type==PL2)
 			 ? EMU_ALL_INST : 0);
 
-  vga.mem.map[VGAEMU_MAP_LFB_MODE].base_page = 0;
-  vga.mem.map[VGAEMU_MAP_LFB_MODE].first_page = 0;
-  vga.mem.map[VGAEMU_MAP_LFB_MODE].pages = 0;
   vga.mem.wrap = vmi->buffer_len * 1024;
   // unmap ???
 
@@ -2507,8 +2506,6 @@ static int __vga_emu_setmode(int mode, int width, int height)
   if(vga.color_bits >= 8 && (vga.mode & 0xffff) > 0x13) {
     vga.mem.wrap = vga.mem.size;
     if(vga.mem.lfb_base_page) {
-      vga.mem.map[VGAEMU_MAP_LFB_MODE].base_page = vga.mem.lfb_base_page;
-      vga.mem.map[VGAEMU_MAP_LFB_MODE].pages = vga.mem.pages;
       vga_emu_map(VGAEMU_MAP_LFB_MODE, 0);	/* map the VGA memory to LFB */
     }
   }
