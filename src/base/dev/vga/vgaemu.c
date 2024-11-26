@@ -2880,11 +2880,13 @@ int changed_vga_colors(void (*upd_func)(DAC_entry *, int, void *), void *arg)
 static void vgaemu_adjust_instremu(int value)
 {
   int i;
+  int changed = (vga.inst_emu != value);
   vga_mapping_type *vmt = &vga.mem.map[VGAEMU_MAP_BANK_MODE];
 
   if (value == EMU_ALL_INST) {
     if (vga.inst_emu != EMU_ALL_INST) {
       v_printf("Seq_write_value: instemu on\n");
+      vga.inst_emu = value;
       pthread_mutex_lock(&prot_mtx);
       for (i = 0; i < vga.mem.pages; i++)
 	_vga_emu_adjust_protection(i, 0, NONE, 1, 1);
@@ -2893,15 +2895,15 @@ static void vgaemu_adjust_instremu(int value)
   } else {
     if (vga.inst_emu != 0) {
       v_printf("Seq_write_value: instemu off\n");
+      vga.inst_emu = value;
       vgaemu_map_bank();	// mapping was disabled, so restore
       dirty_all_video_pages();
     }
   }
-  if (vga.inst_emu != value &&
+  if (changed &&
       (config.cpu_vm == CPUVM_KVM || config.cpu_vm_dpmi == CPUVM_KVM))
     kvm_set_mmio(vmt->base_page << PAGE_SHIFT, vmt->pages << PAGE_SHIFT,
 		 value != 0);
-  vga.inst_emu = value;
 }
 
 /*
