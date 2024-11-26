@@ -54,7 +54,7 @@ static int mmap_1_svc(uint64_t addr, uint64_t length, int prot, int flags,
     close(fd);
     if (ret == MAP_FAILED)
         return -1;
-    return uffd_reattach(sock_rx, targ, length);
+    return uffd_reattach(targ, length);
 }
 
 static int mprotect_1_svc(uint64_t addr, uint64_t length, int prot)
