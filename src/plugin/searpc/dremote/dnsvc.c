@@ -79,6 +79,7 @@ static int remote_mmap(void *addr, size_t length, int prot, int flags,
                                   "int", flags, "int64", &offset);
     pthread_mutex_unlock(&rpc_mtx);
     CHECK_RPC(error);
+    uffd_reinit(addr, length);
     return ret;
 }
 

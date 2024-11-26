@@ -539,6 +539,8 @@ void vga_emu_prot_unlock(void);
 #define VGA_PROT_RO 1
 #define VGA_PROT_NONE 0
 
+void vgaemu_register_dirty_hook(int (*hook)(int, unsigned char *));
+
 /*
  * Functions defined in env/video/vesa.c.
  */
