@@ -3527,5 +3527,7 @@ illegal_op:
 /* reset for VGA reads and writes */
 void instr_emu_sim_reset_count(void)
 {
+	if (!(CEmuStat & CeS_INSTREMU))
+		return;
 	interp_inst_emu_count = VGA_EMU_INST_EMU_COUNT;
 }
