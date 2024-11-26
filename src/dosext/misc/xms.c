@@ -848,7 +848,7 @@ xms_free_EMB(void)
 static unsigned char
 xms_move_EMB(void)
 {
-  unsigned int src, dest;
+  dosaddr_t src = 0, dest = 0;
   void *s, *d;
   struct EMM e;
 
@@ -864,7 +864,7 @@ xms_move_EMB(void)
     src = SEGOFF2LINEAR(e.SourceOffset >> 16, e.SourceOffset & 0xffff);
     if (src + e.Length > LOWMEM_SIZE + HMASIZE)
       return 0xa7;              /* invalid Length */
-    s = LINEAR2UNIX(src);
+    s = NULL;
   }
   else {
     if (e.SourceHandle >= NUM_HANDLES || !handles[e.SourceHandle].addr) {
@@ -882,8 +882,7 @@ xms_move_EMB(void)
     dest = SEGOFF2LINEAR(e.DestOffset >> 16, e.DestOffset & 0xffff);
     if (dest + e.Length > LOWMEM_SIZE + HMASIZE)
       return 0xa7;              /* invalid Length */
-    e_invalidate(dest, e.Length);
-    d = LINEAR2UNIX(dest);
+    d = NULL;
   }
   else {
     if (!handles[e.DestHandle].addr) {
@@ -902,7 +901,14 @@ xms_move_EMB(void)
 
   x_printf("XMS: block move from %p to %p len 0x%x\n",
 	   s, d, e.Length);
-  memcpy(d, s, e.Length);
+  if (s && d)
+    memcpy(d, s, e.Length);
+  else if (s)
+    memcpy_2dos(dest, s, e.Length);
+  else if (d)
+    memcpy_2unix(d, src, e.Length);
+  else
+    memcpy_dos2dos(dest, src, e.Length);
   x_printf("XMS: block move done\n");
 
   return 0;
