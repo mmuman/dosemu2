@@ -2422,8 +2422,6 @@ static int __vga_emu_setmode(int mode, int width, int height)
     vga.pixel_size = (vga.pixel_size + 7) & ~7;		/* assume byte alignment for these modes */
     vga.scan_len *= vga.pixel_size >> 3;
   }
-  vgaemu_adjust_instremu((vga.mode_type==PL4 || vga.mode_type==PL2)
-			 ? EMU_ALL_INST : 0);
 
   vga_msg("vga_emu_setmode: scan_len = %d\n", vga.scan_len);
   i = vga.scan_len;
@@ -2496,6 +2494,8 @@ static int __vga_emu_setmode(int mode, int width, int height)
   vga.buffer_seg = vmi->buffer_start;
   vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = vmi->buffer_start >> 8;
   vgaemu_map_bank();
+  vgaemu_adjust_instremu((vga.mode_type==PL4 || vga.mode_type==PL2)
+			 ? EMU_ALL_INST : 0);
 
   vga.mem.map[VGAEMU_MAP_LFB_MODE].base_page = 0;
   vga.mem.map[VGAEMU_MAP_LFB_MODE].first_page = 0;
