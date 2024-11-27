@@ -5249,7 +5249,7 @@ static int dpmi_gpf_simple(cpuctx_t *scp, uint8_t *lina, void *sp, int *rv)
 
     unprot_stack_page(scp);
 
-    if ((_err & 7) == 2) {			/* int xx */
+    if (lina[0] == 0xcd && (_err & 7) == 2) {		/* int xx */
       int inum = _err >> 3;
       if (inum != lina[1]) {
         error("DPMI: internal error, %x %x\n", inum, lina[1]);
@@ -5296,7 +5296,8 @@ static int dpmi_gpf_simple(cpuctx_t *scp, uint8_t *lina, void *sp, int *rv)
 	    D_printf("DPMI: DOS exit called\n");
       }
       return 1;
-    }
+    } else if ((_err & 7) == 2)
+	error("stalled errcode\n%s", DPMI_show_state(scp));
 
     switch (*lina) {
     case 0xf4:			/* hlt */

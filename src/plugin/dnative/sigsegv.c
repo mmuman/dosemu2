@@ -994,8 +994,14 @@ static void signative_sigbreak(void *uc)
 {
   ucontext_t *uct = uc;
   sigcontext_t *scp = &uct->uc_mcontext;
-  if (!in_vm86 && DPMIValidSelector(_scp_cs))
+  if (!in_vm86 && DPMIValidSelector(_scp_cs)) {
+    /* sigcontext may contain some old errcode value. This usually is
+     * not a problem, except when we set the context to HLT for RSP
+     * or LDT call, and the speculative hlt handler raises an INT
+     * based on a stalled errcode value. */
+    _scp_err = 0;
     dpmi_return(scp, DPMI_RET_DOSEMU);
+  }
 }
 
 SIG_PROTO_PFX
