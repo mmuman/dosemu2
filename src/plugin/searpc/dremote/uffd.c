@@ -35,6 +35,10 @@
 #include "ioselect.h"
 #include "uffd.h"
 
+#ifndef PAGE_SHIFT
+#define PAGE_SHIFT 12
+#endif
+
 static int ffds[VGAEMU_MAX_MAPPINGS];
 
 static int uffd_create(int flags)
@@ -97,33 +101,20 @@ static void uffd_async(int fd, void *arg)
     }
 }
 
-static int do_attach_lfb(void)
+static int do_attach(int idx)
 {
     struct uffdio_register uffdio_register;
     int err;
 
+    if (!vga.mem.map[idx].pages)
+        return 0;
     uffdio_register.mode = UFFDIO_REGISTER_MODE_WP;
-    uffdio_register.range.start = (uintptr_t)MEM_BASE32(vga.mem.lfb_base);
-    uffdio_register.range.len = vga.mem.size;
-    err = ioctl(ffds[VGAEMU_MAP_LFB_MODE], UFFDIO_REGISTER, &uffdio_register);
+    uffdio_register.range.start = (uintptr_t)MEM_BASE32(
+            vga.mem.map[idx].base_page << PAGE_SHIFT);
+    uffdio_register.range.len = vga.mem.map[idx].pages << PAGE_SHIFT;
+    err = ioctl(ffds[idx], UFFDIO_REGISTER, &uffdio_register);
     if (err) {
-        perror("ioctl(UFFDIO_REGISTER lfb)");
-        return err;
-    }
-    return 0;
-}
-
-static int do_attach_bank(void)
-{
-    struct uffdio_register uffdio_register;
-    int err;
-
-    uffdio_register.mode = UFFDIO_REGISTER_MODE_WP;
-    uffdio_register.range.start = (uintptr_t)MEM_BASE32(vga.mem.graph_base);
-    uffdio_register.range.len = vga.mem.graph_size;
-    err = ioctl(ffds[VGAEMU_MAP_BANK_MODE], UFFDIO_REGISTER, &uffdio_register);
-    if (err) {
-        perror("ioctl(UFFDIO_REGISTER bank)");
+        perror("ioctl(UFFDIO_REGISTER)");
         return err;
     }
     return 0;
@@ -133,10 +124,10 @@ int uffd_attach(void)
 {
     int err;
 
-    err = do_attach_lfb();
+    err = do_attach(VGAEMU_MAP_LFB_MODE);
     if (err)
         return err;
-    err = do_attach_bank();
+    err = do_attach(VGAEMU_MAP_BANK_MODE);
     if (err)
         return err;
     return 0;
@@ -182,7 +173,7 @@ void uffd_init(int sock)
     }
 }
 
-int uffd_reattach(int sock, void *addr, size_t len)
+int uffd_reattach(void *addr, size_t len)
 {
     int i, j;
     unsigned page_fault = DOSADDR_REL(addr) >> 12;
@@ -190,14 +181,8 @@ int uffd_reattach(int sock, void *addr, size_t len)
     for (i = 0; i < VGAEMU_MAX_MAPPINGS; i++) {
         j = page_fault - vga.mem.map[i].base_page;
         if (j >= 0 && j < vga.mem.map[i].pages) {
-            switch (i) {
-            case VGAEMU_MAP_BANK_MODE:
-                do_attach_bank();
-                break;
-            case VGAEMU_MAP_LFB_MODE:
-                do_attach_lfb();
-                break;
-            }
+            do_attach(i);
+            break;
         }
     }
     return 0;
@@ -214,6 +199,6 @@ int uffd_wp(int idx, void *addr, size_t len, int wp)
     assert(idx < VGAEMU_MAX_MAPPINGS);
     err = ioctl(ffds[idx], UFFDIO_WRITEPROTECT, &wpdata);
     if (err)
-        perror("ioctl()");
+        perror("ioctl(UFFDIO_WRITEPROTECT)");
     return err;
 }

@@ -1793,6 +1793,8 @@ static int vga_emu_post_init(void)
 {
   if(vga.mem.lfb_base != 0) {
     vga.mem.lfb_base_page = vga.mem.lfb_base >> 12;
+    vga.mem.map[VGAEMU_MAP_LFB_MODE].base_page = vga.mem.lfb_base_page;
+    vga.mem.map[VGAEMU_MAP_LFB_MODE].pages = vga.mem.pages;
   }
   vga_emu_setup_mode_table();
 
@@ -2422,8 +2424,6 @@ static int __vga_emu_setmode(int mode, int width, int height)
     vga.pixel_size = (vga.pixel_size + 7) & ~7;		/* assume byte alignment for these modes */
     vga.scan_len *= vga.pixel_size >> 3;
   }
-  vgaemu_adjust_instremu((vga.mode_type==PL4 || vga.mode_type==PL2)
-			 ? EMU_ALL_INST : 0);
 
   vga_msg("vga_emu_setmode: scan_len = %d\n", vga.scan_len);
   i = vga.scan_len;
@@ -2496,10 +2496,9 @@ static int __vga_emu_setmode(int mode, int width, int height)
   vga.buffer_seg = vmi->buffer_start;
   vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = vmi->buffer_start >> 8;
   vgaemu_map_bank();
+  vgaemu_adjust_instremu((vga.mode_type==PL4 || vga.mode_type==PL2)
+			 ? EMU_ALL_INST : 0);
 
-  vga.mem.map[VGAEMU_MAP_LFB_MODE].base_page = 0;
-  vga.mem.map[VGAEMU_MAP_LFB_MODE].first_page = 0;
-  vga.mem.map[VGAEMU_MAP_LFB_MODE].pages = 0;
   vga.mem.wrap = vmi->buffer_len * 1024;
   // unmap ???
 
@@ -2507,8 +2506,6 @@ static int __vga_emu_setmode(int mode, int width, int height)
   if(vga.color_bits >= 8 && (vga.mode & 0xffff) > 0x13) {
     vga.mem.wrap = vga.mem.size;
     if(vga.mem.lfb_base_page) {
-      vga.mem.map[VGAEMU_MAP_LFB_MODE].base_page = vga.mem.lfb_base_page;
-      vga.mem.map[VGAEMU_MAP_LFB_MODE].pages = vga.mem.pages;
       vga_emu_map(VGAEMU_MAP_LFB_MODE, 0);	/* map the VGA memory to LFB */
     }
   }
@@ -2883,11 +2880,13 @@ int changed_vga_colors(void (*upd_func)(DAC_entry *, int, void *), void *arg)
 static void vgaemu_adjust_instremu(int value)
 {
   int i;
+  int changed = (vga.inst_emu != value);
   vga_mapping_type *vmt = &vga.mem.map[VGAEMU_MAP_BANK_MODE];
 
   if (value == EMU_ALL_INST) {
     if (vga.inst_emu != EMU_ALL_INST) {
       v_printf("Seq_write_value: instemu on\n");
+      vga.inst_emu = value;
       pthread_mutex_lock(&prot_mtx);
       for (i = 0; i < vga.mem.pages; i++)
 	_vga_emu_adjust_protection(i, 0, NONE, 1, 1);
@@ -2896,15 +2895,15 @@ static void vgaemu_adjust_instremu(int value)
   } else {
     if (vga.inst_emu != 0) {
       v_printf("Seq_write_value: instemu off\n");
+      vga.inst_emu = value;
       vgaemu_map_bank();	// mapping was disabled, so restore
       dirty_all_video_pages();
     }
   }
-  if (vga.inst_emu != value &&
+  if (changed &&
       (config.cpu_vm == CPUVM_KVM || config.cpu_vm_dpmi == CPUVM_KVM))
     kvm_set_mmio(vmt->base_page << PAGE_SHIFT, vmt->pages << PAGE_SHIFT,
 		 value != 0);
-  vga.inst_emu = value;
 }
 
 /*
