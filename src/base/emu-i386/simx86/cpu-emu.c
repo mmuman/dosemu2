@@ -1241,9 +1241,9 @@ void instr_sim_leave(int pmode)
 {
   int be = (pmode ? config.cpu_vm_dpmi : config.cpu_vm);
   assert(CEmuStat & CeS_INSTREMU);
-  CEmuStat &= ~CeS_INSTREMU;
   interp_inst_emu_count = 0;
   cpuemu_leave(pmode);
+  CEmuStat &= ~CeS_INSTREMU;
 #ifdef HOST_ARCH_X86
   /* back to regular JIT */
   if (!config.cpusim) {
