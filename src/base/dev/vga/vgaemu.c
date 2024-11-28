@@ -1299,8 +1299,11 @@ static int vga_emu_protect(unsigned page, unsigned mapped_page, int prot,
     return 1;
   }
 
-  for(i = 0; i < VGAEMU_MAX_MAPPINGS; i++) {
-    if(vga.mem.map[i].pages) {
+  for (i = 0; i < VGAEMU_MAX_MAPPINGS; i++) {
+    /* don't protect LFB in instremu mode */
+    if (instremu && i == VGAEMU_MAP_LFB_MODE)
+      break;
+    if (vga.mem.map[i].pages) {
       j = page - vga.mem.map[i].first_page;
       if(j >= 0 && j < vga.mem.map[i].pages) {
 #if DEBUG_MAP >= 1
