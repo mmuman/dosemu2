@@ -1492,7 +1492,9 @@ static int vga_emu_map(unsigned mapping, unsigned first_page)
 
   i = 0;
   pthread_mutex_lock(&prot_mtx);
-  _vga_kvm_sync_dirty_map(mapping);
+  if (vga.mode_class == GRAPH && !vga.inst_emu) {
+    _vga_kvm_sync_dirty_map(mapping);
+  }
   if (mapping == VGAEMU_MAP_BANK_MODE) {
     int cap = MAPPING_VGAEMU;
     if (vga.inst_emu && interp_inst_emu_count)
@@ -2542,8 +2544,11 @@ static int _is_dirty(void)
 {
   int i, ret = 0;
 
-  for(i = 0; i < VGAEMU_MAX_MAPPINGS; i++)
-    _vga_kvm_sync_dirty_map(i);
+  if (vga.mode_class == GRAPH && !vga.inst_emu) {
+    for (i = 0; i < VGAEMU_MAX_MAPPINGS; i++) {
+      _vga_kvm_sync_dirty_map(i);
+    }
+  }
 
   if (vga.mem.dirty_map) {
     for (i = 0; i < vga.mem.pages; i++) {
