@@ -1466,7 +1466,7 @@ static int vga_emu_map(unsigned mapping, unsigned first_page)
 {
   unsigned u;
   vga_mapping_type *vmt;
-  int prot, i;
+  int prot, i = 0;
 
   if(mapping >= VGAEMU_MAX_MAPPINGS) return 1;
 
@@ -1500,10 +1500,7 @@ static int vga_emu_map(unsigned mapping, unsigned first_page)
     i = alias_mapping(cap,
       vmt->base_page << 12, vmt->pages << 12,
       prot, vga.mem.base + (first_page << 12));
-  } else if (config.cpu_vm_dpmi != CPUVM_KVM)
-    /* LFB: mapped at init, just need to set protection */
-    i = mprotect_vga(VGAEMU_MAP_LFB_MODE, vmt->base_page << 12,
-			 vmt->pages << 12, prot);
+  }
 
   if(i == -1) {
     pthread_mutex_unlock(&prot_mtx);
