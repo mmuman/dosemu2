@@ -1348,7 +1348,7 @@ static int vga_emu_protect(unsigned page, unsigned mapped_page, int prot,
 static int _vga_emu_adjust_protection(const unsigned page, unsigned mapped_page,
 	int prot, int dirty, int instremu)
 {
-  int i, err, k;
+  int i, err;
   unsigned page1 = page;
 
   if(page >= vga.mem.pages) {
@@ -1371,7 +1371,9 @@ static int _vga_emu_adjust_protection(const unsigned page, unsigned mapped_page,
       );
     }
   }
-
+#if 0
+  /* PL2 and PL4 modes have just 1 plane mapped at a time.
+   * So this code was protecting LFB mapping for no reason. */
   if(vga.mem.planes == 4) {	/* MODE_X or PL4 */
     page1 &= ~0x30;
     for(k = 0; k < vga.mem.planes; k++, page1 += 0x10)
@@ -1385,7 +1387,7 @@ static int _vga_emu_adjust_protection(const unsigned page, unsigned mapped_page,
     page1 += 0x20;
     vga_emu_protect(page1, 0, prot, instremu);
   }
-
+#endif
   if(vga.mode_type == CGA) {
     /* CGA uses two 8k banks  */
     page1 &= ~0x2;
