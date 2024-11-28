@@ -1,5 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
+AC_CONFIG_HEADERS([_searpc_config.h])
 AC_CONFIG_FILES([Makefile.conf])
 
 PKG_CHECK_MODULES([GLIB2], [glib-2.0], [
@@ -60,4 +61,8 @@ if test "$nok" != "1"; then
   AC_SUBST(DREMOTE)
 fi
 
+AC_CHECK_DECLS([UFFD_FEATURE_WP_ASYNC],,,[[#include <linux/userfaultfd.h>]])
+
 AC_OUTPUT
+
+sed -E 's/#define PACKAGE_.+//' _searpc_config.h >searpc_config.hh

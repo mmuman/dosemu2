@@ -1426,9 +1426,17 @@ int vga_emu_adjust_protection(unsigned page, unsigned mapped_page,
   return ret;
 }
 
+static void sync_dirty_map(int mapping)
+{
+  int i;
+
+  for (i = 0; i < vga.mem.map[mapping].pages; i++)
+    if (test_bit(i, vga.mem.dirty_bitmap))
+       _vgaemu_dirty_page(vga.mem.map[mapping].first_page + i, 1);
+}
+
 static void _vga_kvm_sync_dirty_map(unsigned mapping)
 {
-  unsigned i;
   dosaddr_t base;
 
   if (config.cpu_vm_dpmi != CPUVM_KVM) {
@@ -1447,9 +1455,14 @@ static void _vga_kvm_sync_dirty_map(unsigned mapping)
     return;
 
   kvm_get_dirty_map(base, vga.mem.dirty_bitmap);
-  for (i = 0; i < vga.mem.map[mapping].pages; i++)
-    if (test_bit(i, vga.mem.dirty_bitmap))
-       _vgaemu_dirty_page(vga.mem.map[mapping].first_page + i, 1);
+}
+
+static int (*dirty_hook)(int, unsigned char *);
+
+void vgaemu_register_dirty_hook(int (*hook)(int, unsigned char *))
+{
+  assert(!dirty_hook);
+  dirty_hook = hook;
 }
 
 /*
@@ -1493,7 +1506,11 @@ static int vga_emu_map(unsigned mapping, unsigned first_page)
   i = 0;
   pthread_mutex_lock(&prot_mtx);
   if (vga.mode_class == GRAPH && !vga.inst_emu) {
-    _vga_kvm_sync_dirty_map(mapping);
+    if (dirty_hook)
+      dirty_hook(mapping, vga.mem.dirty_bitmap);
+    else
+      _vga_kvm_sync_dirty_map(mapping);
+    sync_dirty_map(mapping);
   }
   if (mapping == VGAEMU_MAP_BANK_MODE) {
     int cap = MAPPING_VGAEMU;
@@ -2546,7 +2563,11 @@ static int _is_dirty(void)
 
   if (vga.mode_class == GRAPH && !vga.inst_emu) {
     for (i = 0; i < VGAEMU_MAX_MAPPINGS; i++) {
-      _vga_kvm_sync_dirty_map(i);
+      if (dirty_hook)
+        dirty_hook(i, vga.mem.dirty_bitmap);
+      else
+        _vga_kvm_sync_dirty_map(i);
+      sync_dirty_map(i);
     }
   }
 
