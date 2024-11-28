@@ -2888,7 +2888,7 @@ static void vgaemu_adjust_instremu(int value)
       v_printf("Seq_write_value: instemu on\n");
       vga.inst_emu = value;
       pthread_mutex_lock(&prot_mtx);
-      for (i = 0; i < vga.mem.pages; i++)
+      for (i = 0; i < vga.mem.map[VGAEMU_MAP_BANK_MODE].pages; i++)
 	_vga_emu_adjust_protection(i, 0, NONE, 1, 1);
       pthread_mutex_unlock(&prot_mtx);
     }
