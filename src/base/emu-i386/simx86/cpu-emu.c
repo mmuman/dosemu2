@@ -1241,6 +1241,7 @@ void instr_sim_leave(int pmode)
 {
   int be = (pmode ? config.cpu_vm_dpmi : config.cpu_vm);
   assert(CEmuStat & CeS_INSTREMU);
+  FlagSync_All();
   interp_inst_emu_count = 0;
   cpuemu_leave(pmode);
   CEmuStat &= ~CeS_INSTREMU;
