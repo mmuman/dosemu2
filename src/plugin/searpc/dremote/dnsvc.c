@@ -33,7 +33,6 @@
 static SearpcClient *clnt;
 static int sock_tx;
 static int exited;
-static pthread_mutex_t rpc_mtx = PTHREAD_MUTEX_INITIALIZER;
 void *rpc_shared_page;
 #define RPC_SHARED_SIZE PAGE_SIZE
 
@@ -69,7 +68,6 @@ static int remote_mmap(void *addr, size_t length, int prot, int flags,
 
     if (!clnt)
         return 0;
-    pthread_mutex_lock(&rpc_mtx);
     send_fd(sock_tx, fd);
     memcpy(rpc_shared_page, vga.mem.map, sizeof(vga.mem.map));
     ret = searpc_client_call__int(clnt, "mmap_1",
@@ -77,7 +75,6 @@ static int remote_mmap(void *addr, size_t length, int prot, int flags,
                                   "int64", &addr,
                                   "int64", &length, "int", prot,
                                   "int", flags, "int64", &offset);
-    pthread_mutex_unlock(&rpc_mtx);
     CHECK_RPC(error);
     uffd_reinit(addr, length);
     return ret;
@@ -90,12 +87,11 @@ static int remote_mprotect(void *addr, size_t length, int prot)
 
     if (!clnt)
         return 0;
-    pthread_mutex_lock(&rpc_mtx);
+    assert(pthread_equal(dosemu_pthread_self, pthread_self()));
     ret = searpc_client_call__int(clnt, "mprotect_1",
                                   &error, 3,
                                   "int64", &addr,
                                   "int64", &length, "int", prot);
-    pthread_mutex_unlock(&rpc_mtx);
     CHECK_RPC(error);
     return ret;
 }
@@ -107,12 +103,10 @@ static int remote_madvise(void *addr, size_t length, int flags)
 
     if (!clnt)
         return 0;
-    pthread_mutex_lock(&rpc_mtx);
     ret = searpc_client_call__int(clnt, "madvise_1",
                                   &error, 3,
                                   "int64", &addr,
                                   "int64", &length, "int", flags);
-    pthread_mutex_unlock(&rpc_mtx);
     CHECK_RPC(error);
     return ret;
 }
@@ -139,10 +133,8 @@ static int remote_dpmi_setup(void)
         fprintf(stderr, "failure registering RPC\n");
         return -1;
     }
-    pthread_mutex_lock(&rpc_mtx);
     uffd_init(sock_tx);
     ret = searpc_client_call__int(clnt, "setup_1", &error, 0);
-    pthread_mutex_unlock(&rpc_mtx);
     CHECK_RPC(error);
     return ret;
 }
@@ -151,9 +143,7 @@ static int _remote_dpmi_done(void)
 {
     int ret;
     GError *error = NULL;
-    pthread_mutex_lock(&rpc_mtx);
     searpc_client_call__int(clnt, "done_1", &error, 0);
-    pthread_mutex_unlock(&rpc_mtx);
     CHECK_RPC(error);
     return ret;
 }
@@ -171,14 +161,12 @@ static int remote_dpmi_control(cpuctx_t *scp)
 {
     int ret;
     GError *error = NULL;
-    pthread_mutex_lock(&rpc_mtx);
     send_state(scp);
     in_rdpmi++;
     ret = searpc_client_call__int(clnt, "control_1", &error, 0);
     in_rdpmi--;
-    CHECK_RPC_LOCKED(error);
+    CHECK_RPC(error);
     recv_state(scp);
-    pthread_mutex_unlock(&rpc_mtx);
     return ret;
 }
 
@@ -186,12 +174,10 @@ static int remote_dpmi_exit(cpuctx_t *scp)
 {
     int ret;
     GError *error = NULL;
-    pthread_mutex_lock(&rpc_mtx);
     send_state(scp);
     ret = searpc_client_call__int(clnt, "exit_1", &error, 0);
-    CHECK_RPC_LOCKED(error);
+    CHECK_RPC(error);
     recv_state(scp);
-    pthread_mutex_unlock(&rpc_mtx);
     return ret;
 }
 
@@ -199,14 +185,12 @@ static int remote_read_ldt(void *ptr, int bytecount)
 {
     int ret;
     GError *error = NULL;
-    pthread_mutex_lock(&rpc_mtx);
     ret = searpc_client_call__int(clnt, "read_ldt_1",
                                   &error, 1,
                                   "int", bytecount);
-    CHECK_RPC_LOCKED(error);
+    CHECK_RPC(error);
     if (ret > 0)
         memcpy(ptr, rpc_shared_page, ret);
-    pthread_mutex_unlock(&rpc_mtx);
     return ret;
 }
 
@@ -214,12 +198,10 @@ static int remote_write_ldt(void *ptr, int bytecount)
 {
     int ret;
     GError *error = NULL;
-    pthread_mutex_lock(&rpc_mtx);
     memcpy(rpc_shared_page, ptr, bytecount);
     ret = searpc_client_call__int(clnt, "write_ldt_1",
                                   &error, 1,
                                   "int", bytecount);
-    pthread_mutex_unlock(&rpc_mtx);
     CHECK_RPC(error);
     return ret;
 }
@@ -228,11 +210,9 @@ static int remote_check_verr(unsigned short selector)
 {
     int ret;
     GError *error = NULL;
-    pthread_mutex_lock(&rpc_mtx);
     ret = searpc_client_call__int(clnt, "check_verr_1",
                                   &error, 1,
                                   "int", selector);
-    pthread_mutex_unlock(&rpc_mtx);
     CHECK_RPC(error);
     return ret;
 }
@@ -241,14 +221,12 @@ static int remote_debug_breakpoint(int op, cpuctx_t *scp, int err)
 {
     int ret;
     GError *error = NULL;
-    pthread_mutex_lock(&rpc_mtx);
     send_state(scp);
     ret = searpc_client_call__int(clnt, "debug_breakpoint_1",
                                   &error, 2,
                                   "int", op, "int", err);
-    CHECK_RPC_LOCKED(error);
+    CHECK_RPC(error);
     recv_state(scp);
-    pthread_mutex_unlock(&rpc_mtx);
     return ret;
 }
 

@@ -16,6 +16,6 @@ SearpcClient *clnt_init(int *sock_rx, init_cb_t init_cb,
 } while (0)
 
 #define CHECK_RPC(st) _CHECK_RPC(st,)
-#define CHECK_RPC_LOCKED(st) _CHECK_RPC(st, pthread_mutex_unlock(&rpc_mtx);)
+//#define CHECK_RPC_LOCKED(st) _CHECK_RPC(st, pthread_mutex_unlock(&rpc_mtx);)
 
 #endif
