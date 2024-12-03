@@ -1391,24 +1391,34 @@ static int _vga_emu_adjust_protection(const unsigned page, unsigned mapped_page,
     vga_emu_protect(page1, 0, prot, instremu);
   }
 #endif
-  if(vga.mode_type == CGA) {
-    /* CGA uses two 8k banks  */
-    page1 &= ~0x2;
-    vga_emu_protect(page1, 0, prot, instremu);
-    page1 += 0x2;
-    vga_emu_protect(page1, 0, prot, instremu);
-  }
+  if (dirty) {
+    /* for speed-up we also dirty the interleaving pages, as they will
+     * most likely fault too. */
+    if (vga.mode_type == CGA) {
+      /* CGA uses two 8k banks  */
+      page1 &= ~0x2;
+      vga_emu_protect(page1, 0, prot, instremu);
+      _vgaemu_dirty_page(page1, dirty);
+      page1 += 0x2;
+      vga_emu_protect(page1, 0, prot, instremu);
+      _vgaemu_dirty_page(page1, dirty);
+     }
 
-  if(vga.mode_type == HERC) {
-    /* Hercules uses four 8k banks  */
-    page1 &= ~0x6;
-    vga_emu_protect(page1, 0, prot, instremu);
-    page1 += 0x2;
-    vga_emu_protect(page1, 0, prot, instremu);
-    page1 += 0x2;
-    vga_emu_protect(page1, 0, prot, instremu);
-    page1 += 0x2;
-    vga_emu_protect(page1, 0, prot, instremu);
+    if (vga.mode_type == HERC) {
+      /* Hercules uses four 8k banks  */
+      page1 &= ~0x6;
+      vga_emu_protect(page1, 0, prot, instremu);
+      _vgaemu_dirty_page(page1, dirty);
+      page1 += 0x2;
+      vga_emu_protect(page1, 0, prot, instremu);
+      _vgaemu_dirty_page(page1, dirty);
+      page1 += 0x2;
+      vga_emu_protect(page1, 0, prot, instremu);
+      _vgaemu_dirty_page(page1, dirty);
+      page1 += 0x2;
+      vga_emu_protect(page1, 0, prot, instremu);
+      _vgaemu_dirty_page(page1, dirty);
+    }
   }
 
   _vgaemu_dirty_page(page, dirty);
@@ -2725,40 +2735,6 @@ static void _vgaemu_dirty_page(int page, int dirty)
       vga.mem.dirty_map[page]);
   /* prot_mtx should be locked by caller */
   vga.mem.dirty_map[page] = dirty;
-
-  if(vga.mem.planes == 4) {	/* MODE_X or PL4 */
-    page &= ~0x30;
-    for(k = 0; k < vga.mem.planes; k++, page += 0x10)
-      vga.mem.dirty_map[page] = dirty;
-  }
-
-  if(vga.mode_type == PL2) {
-    /* it's actually 4 planes, but we let everyone believe it's a 1-plane mode */
-    page &= ~0x30;
-    vga.mem.dirty_map[page] = dirty;
-    page += 0x20;
-    vga.mem.dirty_map[page] = dirty;
-  }
-
-  if(vga.mode_type == CGA) {
-    /* CGA uses two 8k banks  */
-    page &= ~0x2;
-    vga.mem.dirty_map[page] = dirty;
-    page += 0x2;
-    vga.mem.dirty_map[page] = dirty;
-  }
-
-  if(vga.mode_type == HERC) {
-    /* Hercules uses four 8k banks  */
-    page &= ~0x6;
-    vga.mem.dirty_map[page] = dirty;
-    page += 0x2;
-    vga.mem.dirty_map[page] = dirty;
-    page += 0x2;
-    vga.mem.dirty_map[page] = dirty;
-    page += 0x2;
-    vga.mem.dirty_map[page] = dirty;
-  }
 }
 
 void vgaemu_dirty_page(int page, int dirty)
