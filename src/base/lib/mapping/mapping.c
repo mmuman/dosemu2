@@ -56,6 +56,16 @@ struct mem_map_struct {
   int len;
 };
 
+struct hardware_ram {
+  size_t base;
+  dosaddr_t default_vbase;
+  dosaddr_t vbase;
+  size_t size;
+  int type;
+  unsigned char **aliasmap;
+  struct hardware_ram *next;
+};
+
 #ifdef __linux__
 #define MAX_KMEM_MAPPINGS 4096
 static int kmem_mappings = 0;
@@ -118,9 +128,18 @@ static void update_aliasmap(dosaddr_t dosaddr, size_t mapsize,
 
 void *dosaddr_to_unixaddr(dosaddr_t addr)
 {
+  unsigned addr2;
+  int off;
+  struct hardware_ram *hw;
+
   if (addr < ALIAS_SIZE)
     return lowmem_aliasmap[addr >> PAGE_SHIFT] + (addr & (PAGE_SIZE - 1));
-  return MEM_BASE32(addr);
+  addr2 = do_find_hardware_ram(addr, 1, &hw);
+  /* since 517a4c61 lowmem_base follows VA, not PA */
+  if (addr2 == (unsigned)-1)
+    return LOWMEM(addr);
+  off = addr - hw->vbase;
+  return hw->aliasmap[off >> PAGE_SHIFT] + (off & (PAGE_SIZE - 1));
 }
 
 void *physaddr_to_unixaddr(unsigned int addr)
@@ -693,16 +712,6 @@ static unsigned char **alloc_aliasmap(unsigned char *addr, int size)
   populate_aliasmap(ret, addr, size);
   return ret;
 }
-
-struct hardware_ram {
-  size_t base;
-  dosaddr_t default_vbase;
-  dosaddr_t vbase;
-  size_t size;
-  int type;
-  unsigned char **aliasmap;
-  struct hardware_ram *next;
-};
 
 static struct hardware_ram *hardware_ram;
 
