@@ -106,7 +106,7 @@ void rep_movs_stos(struct rep_stack *stack)
 	in_cpatch++;
 	assert(InCompiledCode);
 	InCompiledCode--;
-	addr = DOSADDR_REL(paddr);
+	addr = EMUADDR_REL(paddr);
 	if (*eip == 0xf3) /* skip rep */
 		eip++;
 	op = eip[0];
@@ -122,7 +122,7 @@ void rep_movs_stos(struct rep_stack *stack)
 		     len, eip);
 	edi = LINEAR2UNIX(addr);
 	if ((op & 0xfe) == 0xa4) { /* movs */
-		dosaddr_t source = DOSADDR_REL(stack->esi);
+		dosaddr_t source = EMUADDR_REL(stack->esi);
 		unsigned char *esi;
 		unsigned int v = vga_access(source, addr);
 		if (v) {
@@ -146,7 +146,7 @@ void rep_movs_stos(struct rep_stack *stack)
 		}
 		if (EFLAGS & EFLAGS_DF) source -= len;
 		else source += len;
-		stack->esi = MEM_BASE32(source);
+		stack->esi = EMU_BASE32(source);
 	}
 	else if ((op & 0xfe) == 0xaa) { /* stos */
 		unsigned int eax = stack->eax;
@@ -186,21 +186,21 @@ void rep_movs_stos(struct rep_stack *stack)
 	}
 	else if ((op & 0xf6) == 0xa6) { /* cmps/scas */
 		int repmod = (size == 1 ? MBYTE : size == 2 ? DATA16 : 0);
-		AR1.d = DOSADDR_REL(stack->edi);
+		AR1.d = EMUADDR_REL(stack->edi);
 		TR1.d = stack->ecx;
 		repmod |= MOVSDST|MREPCOND|(eip[-1]==REPNE? MREPNE:MREP);
 		if ((op & 0xf6) == 0xa6) { /* cmps */
 			repmod |= MOVSSRC;
-			AR2.d = DOSADDR_REL(stack->esi);
+			AR2.d = EMUADDR_REL(stack->esi);
 			Gen_sim(O_MOVS_CmpD, repmod);
-			stack->esi = MEM_BASE32(AR2.d);
+			stack->esi = EMU_BASE32(AR2.d);
 		}
 		else { /* scas */
 			DR1.d = stack->eax;
 			Gen_sim(O_MOVS_ScaD, repmod);
 		}
 		FlagSync_All();
-		stack->edi = MEM_BASE32(AR1.d);
+		stack->edi = EMU_BASE32(AR1.d);
 		stack->ecx = TR1.d;
 		stack->eflags = (stack->eflags & ~EFLAGS_CC) |
 			(EFLAGS & EFLAGS_CC);
@@ -208,7 +208,7 @@ void rep_movs_stos(struct rep_stack *stack)
 	}
 	if (EFLAGS & EFLAGS_DF) addr -= len;
 	else addr += len;
-	stack->edi = MEM_BASE32(addr);
+	stack->edi = EMU_BASE32(addr);
 	stack->ecx = ecx;
 done:
 	InCompiledCode++;

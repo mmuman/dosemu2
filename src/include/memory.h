@@ -195,15 +195,26 @@ dosaddr_t physaddr_to_dosaddr(unsigned addr, int len);
 */
 unsigned char *_mem_base(void);
 #define mem_base _mem_base()
+unsigned char *_jit_base(void);
+#define jit_base _jit_base()
 
 #define LINP(a) ((unsigned char *)(uintptr_t)(a))
 static inline unsigned char *MEM_BASE32(dosaddr_t a)
 {
   return &mem_base[a];
 }
+static inline unsigned char *EMU_BASE32(dosaddr_t a)
+{
+  return &jit_base[a];
+}
 static inline dosaddr_t DOSADDR_REL(const unsigned char *a)
 {
     return (a - mem_base);
+}
+
+static inline dosaddr_t EMUADDR_REL(const unsigned char *a)
+{
+    return (a - jit_base);
 }
 
 /* lowmem_base points to a shared memory image of the area 0--1MB+64K.

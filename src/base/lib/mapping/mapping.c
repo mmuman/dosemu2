@@ -42,11 +42,11 @@
 #include <linux/version.h>
 #endif
 
+enum { MEM_BASE, KVM_BASE, JIT_BASE,
 #ifdef __i386__
-enum { MEM_BASE, KVM_BASE, VM86_BASE, MAX_BASES };
-#else
-enum { MEM_BASE, KVM_BASE, MAX_BASES };
+       VM86_BASE,
 #endif
+       MAX_BASES };
 
 struct mem_map_struct {
   off_t src;
@@ -81,6 +81,10 @@ unsigned char *_mem_base(void)
 {
   return mem_bases[MEM_BASE].base;
 }
+unsigned char *_jit_base(void)
+{
+  return mem_bases[JIT_BASE].base;
+}
 uint8_t *lowmem_base;
 
 static struct mappingdrivers *mappingdrv[] = {
@@ -100,6 +104,7 @@ static struct mappingdrivers *mappingdrv[] = {
 };
 
 static struct mappingdrivers *mappingdriver;
+static const struct mapping_hook *mapping_hook;
 
 #define ALIAS_SIZE (LOWMEM_SIZE + HMASIZE)
 static unsigned char *lowmem_aliasmap[ALIAS_SIZE/PAGE_SIZE];
@@ -110,7 +115,6 @@ static unsigned do_find_hardware_ram(dosaddr_t va, uint32_t size,
 	struct hardware_ram **r_hw);
 static void hwram_update_aliasmap(struct hardware_ram *hw, unsigned addr,
 	int size, unsigned char *src);
-static int mprotect_hook(void *addr, size_t length, int prot);
 static int madvise_mapping(dosaddr_t targ, size_t length, int flags);
 
 static void update_aliasmap(dosaddr_t dosaddr, size_t mapsize,
@@ -273,6 +277,17 @@ int alias_mapping_high(int cap, dosaddr_t targ, size_t mapsize, int protect,
   addr = mappingdriver->alias(cap, MEM_BASE32(targ), mapsize, protect, source);
   if (addr == MAP_FAILED)
     return -1;
+  if (cap & MAPPING_INIT_LOWRAM) {
+    void *addr2 = mappingdriver->alias(cap, (void *)-1, mapsize, protect,
+        source);
+    if (addr2 == MAP_FAILED) {
+      error("second alias failed\n");
+      munmap(addr, mapsize);
+      return -1;
+    }
+    mem_bases[JIT_BASE].base = addr2;
+    mem_bases[JIT_BASE].size = mapsize;
+  }
   Q__printf("MAPPING: %s alias created at %p\n", cap, addr);
   if (is_kvm_map(cap))
     mprotect_kvm(cap, targ, mapsize, protect);
@@ -462,35 +477,51 @@ int restore_mapping(int cap, dosaddr_t targ, size_t mapsize)
   return ret;
 }
 
-int mprotect_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect)
+static int do_mprot(dosaddr_t targ, size_t mapsize, int protect)
 {
   int i, ret = -1;
+
+  for (i = 0; i < MAX_BASES; i++) {
+    void *addr = MEM_BASE32x(targ, i);
+    /* protections on KVM_BASE go via page tables in the VM, not mprotect */
+    if (addr == MAP_FAILED || i == KVM_BASE)
+      continue;
+    ret = mprotect(addr, mapsize, protect);
+    if (ret) {
+      error("mprotect() failed: %s\n", strerror(errno));
+      return ret;
+    }
+  }
+  return ret;
+}
+
+int mprotect_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect)
+{
+  int ret = -1;
+  void *addr;
 
   Q__printf("MAPPING: mprotect, cap=%s, targ=%x, size=%zx, protect=%x\n",
 	cap, targ, mapsize, protect);
   invalidate_unprotected_page_cache(targ, mapsize);
   if (is_kvm_map(cap))
     mprotect_kvm(cap, targ, mapsize, protect);
-  if (!(cap & MAPPING_LOWMEM)) {
-    ret = mprotect_hook(MEM_BASE32(targ), mapsize, protect);
+  if (cap & MAPPING_CPUEMU) {
+    /* for cpuemu only mprotect JIT_BASE */
+    ret = mprotect(MEM_BASE32x(targ, JIT_BASE), mapsize, protect);
     if (ret)
       error("mprotect() failed: %s\n", strerror(errno));
     return ret;
   }
-  for (i = 0; i < MAX_BASES; i++) {
-    void *addr = MEM_BASE32x(targ, i);
-    /* protections on KVM_BASE go via page tables in the VM, not mprotect */
-    if (addr == MAP_FAILED || i == KVM_BASE)
-      continue;
-    assert(i == MEM_BASE || targ + mapsize <= ALIAS_SIZE);
-    Q__printf("MAPPING: mprotect, cap=%s, addr=%p, size=%zx, protect=%x\n",
-	cap, addr, mapsize, protect);
-    ret = (i == MEM_BASE ? mprotect_hook : mprotect)(addr, mapsize, protect);
-    if (ret) {
-      error("mprotect() failed: %s\n", strerror(errno));
-      return ret;
-    }
-  }
+  ret = do_mprot(targ, mapsize, protect);
+  if (ret)
+    return ret;
+  addr = MEM_BASE32(targ);
+  if ((unsigned char *)addr < mem_bases[MEM_BASE].base ||
+      (unsigned char *)addr + mapsize > mem_bases[MEM_BASE].base +
+      mem_bases[MEM_BASE].size)
+    return ret;
+  if (mapping_hook)
+    ret = mapping_hook->mprotect(addr, mapsize, protect);
   return ret;
 }
 
@@ -1074,8 +1105,6 @@ int unalias_mapping_pa(int cap, unsigned addr, size_t mapsize)
   return 1;
 }
 
-static const struct mapping_hook *mapping_hook;
-
 void mapping_register_hook(const struct mapping_hook *hook)
 {
   assert(!mapping_hook);
@@ -1098,18 +1127,6 @@ void *mmap_shm_hook(int cap, void *addr, size_t length, int prot, int flags,
     ret = MAP_FAILED;
   }
   return ret;
-}
-
-static int mprotect_hook(void *addr, size_t length, int prot)
-{
-  int err = mprotect(addr, length, prot);
-  if (err || (unsigned char *)addr < mem_bases[MEM_BASE].base ||
-      (unsigned char *)addr + length > mem_bases[MEM_BASE].base +
-      mem_bases[MEM_BASE].size)
-    return err;
-  if (mapping_hook)
-    err = mapping_hook->mprotect(addr, length, prot);
-  return err;
 }
 
 static int madvise_mapping(dosaddr_t targ, size_t length, int flags)
@@ -1171,7 +1188,7 @@ int mprotect_vga(int idx, dosaddr_t targ, size_t mapsize, int protect)
   int wp = !(protect & PROT_WRITE);
   int err;
 
-  err = mprotect(addr, mapsize, protect);
+  err = do_mprot(targ, mapsize, protect);
   if (err)
     return err;
   if (mapping_hook)
