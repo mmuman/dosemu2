@@ -360,13 +360,13 @@ AC_DEFINE_DIR([SYSTEM_XFONTS_PATH], [x11fontdir], [ Directory for x11 fonts ])
 
 DOSEMU_CPPFLAGS="$DOSEMU_CPPFLAGS -imacros emu_config.h"
 DOSEMU_CFLAGS="$DOSEMU_CFLAGS -Wall -Wstrict-prototypes -Wmissing-declarations \
--Wnested-externs -fms-extensions -pthread \
+-Wnested-externs -fms-extensions -pthread -flto=auto \
 -Wno-unused-result -Wcast-qual -Wwrite-strings -Wstrict-aliasing=3 -Wundef"
 AX_CHECK_COMPILE_FLAG([-Waddress-of-packed-member],
   [DOSEMU_CFLAGS="$DOSEMU_CFLAGS -Wno-address-of-packed-member"],, [-Werror])
 AX_CHECK_COMPILE_FLAG([-Wstring-plus-int],
   [DOSEMU_CFLAGS="$DOSEMU_CFLAGS -Wno-string-plus-int"],, [-Werror])
-DOSEMU_LDFLAGS="-pthread"
+DOSEMU_LDFLAGS="-pthread -flto=auto -O2"
 
 AC_CHECK_LIB(m, pow)
 AC_CHECK_DECLS([exp10f],,, [[#include <math.h>]])
