@@ -509,6 +509,7 @@ static void do_unmap_shm(dpmi_pm_block *block)
     if (err)
         error("restore_mapping() failed\n");
     smfree(&mem_pool, MEM_BASE32(block->base));
+    unregister_hardware_ram_virtual(block->base);
     block->mapped = 0;
 }
 
@@ -648,7 +649,7 @@ dpmi_pm_block *DPMI_mallocShared(dpmi_pm_block_root *root,
     }
     if (!(flags & SHM_NOEXEC))
         prot |= PROT_EXEC;
-    /* this mem is already mapped to KVM so we use plain mmap() */
+    register_hardware_ram_virtual('S', DOSADDR_REL(addr), size, DOSADDR_REL(addr));
     addr2 = mmap_shm_ux(addr, size, prot, fd);
     close(fd);
     fd = -1;
@@ -732,7 +733,7 @@ static dpmi_pm_block *DPMI_mallocSharedNS_common(dpmi_pm_block_root *root,
     }
     if (!(flags & SHM_NOEXEC))
         prot |= PROT_EXEC;
-    /* this mem is already mapped to KVM so we use plain mmap() */
+    register_hardware_ram_virtual('S', DOSADDR_REL(addr), size, DOSADDR_REL(addr));
     addr2 = mmap_shm_ux(addr, size, prot, fd);
     close(fd);
     fd = -1;

@@ -827,7 +827,7 @@ void register_hardware_ram_virtual(int type, unsigned base, unsigned int size,
   register_hardware_ram_virtual2(type, base, size, uaddr, va);
 }
 
-int unregister_hardware_ram_virtual(dosaddr_t base)
+int unregister_hardware_ram_virtual(unsigned base)
 {
   struct hardware_ram *hw, *phw;
 
