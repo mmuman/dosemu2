@@ -73,12 +73,15 @@ static struct mem_map_struct kmem_map[MAX_KMEM_MAPPINGS];
 #endif
 
 static int init_done = 0;
-unsigned char *mem_base;
 uintptr_t mem_base_mask;
 static struct {
   unsigned char *base;
   size_t size;
 } mem_bases[MAX_BASES];
+unsigned char *_mem_base(void)
+{
+  return mem_bases[MEM_BASE].base;
+}
 uint8_t *lowmem_base;
 
 static struct mappingdrivers *mappingdrv[] = {

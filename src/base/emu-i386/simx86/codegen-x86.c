@@ -3356,7 +3356,7 @@ static unsigned Exec_x86_asm(unsigned *mem_ref, unsigned long *flg,
 #endif
 		: "=d"(*flg),"=a"(ePC),"=D"(*mem_ref)
 		: "b"(ecpu),"d"(*flg),"a"(SeqStart),"R"(do_seq_start),
-		  "m"(mem_base)
+		  "r"(mem_base)
 		: "memory", "cc", "ecx", "esi", "bp" EXEC_CLOBBERS
 	);
 	InCompiledCode = 0;

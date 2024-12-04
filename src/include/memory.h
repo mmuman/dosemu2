@@ -193,7 +193,8 @@ dosaddr_t physaddr_to_dosaddr(unsigned addr, int len);
    restrictions it can be non-zero. Non-zero values block vm86 but at least
    give NULL pointer protection.
 */
-extern unsigned char *mem_base;
+unsigned char *_mem_base(void);
+#define mem_base _mem_base()
 extern uintptr_t mem_base_mask;
 
 #define LINP(a) ((unsigned char *)(uintptr_t)(a))

@@ -382,7 +382,7 @@ void map_memory_space(void)
     perror("LOWRAM alloc");
     leavedos(98);
   }
-  mem_base = mem_reserve(memsize);
+  mem_reserve(memsize);
   mem_base_mask = ~(uintptr_t)0;
 #ifdef __x86_64__
   if (_MAP_32BIT) mem_base_mask = 0xffffffffu;
