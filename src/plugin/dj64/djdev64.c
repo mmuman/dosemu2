@@ -60,13 +60,13 @@ static void do_retf(cpuctx_t *scp);
 
 static uint8_t *dj64_addr2ptr(uint32_t addr)
 {
-    return dosaddr_to_unixaddr(addr);
+    return MEM_BASE32(addr);
 }
 
 static uint8_t *dj64_addr2ptr2(uint32_t addr, uint32_t len)
 {
     e_invalidate(addr, len);
-    return dosaddr_to_unixaddr(addr);
+    return MEM_BASE32(addr);
 }
 
 static uint32_t dj64_ptr2addr(const uint8_t *ptr)
