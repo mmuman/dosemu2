@@ -53,21 +53,11 @@ void m_munprotect(unsigned int addr, unsigned int len, unsigned char *eip)
 			e_printf("CODE %08x hit in DATA %p patch\n",addr,eip);
 	}
 	/* if only data in aliased low memory is hit, nothing to do */
-	if (addr < LOWMEM_SIZE + HMASIZE) {
-		if (e_querymark(addr, len))
-			// no need to invalidate the whole page here,
-			// as the page does not need to be unprotected
-			InvalidateNodeRange(addr,len,eip);
+	if (!e_querymark(addr, len))
 		return;
-	}
-	/* Always unprotect and clear all code in the pages
-	 * for DPMI data and code
-	 * Maybe the stub was set up before that code was parsed.
-	 * Clear that code */
-/*	if (UnCpatch((void *)(eip-3))) leavedos_main(0); */
-	len = PAGE_ALIGN(addr + len) - (addr & _PAGE_MASK);
-	addr &= _PAGE_MASK;
-	InvalidateNodeRange(addr,len,eip);
+	// no need to invalidate the whole page here,
+	// as the page does not need to be unprotected
+	InvalidateNodeRange(addr, len, eip);
 }
 
 #define repmovs(std,letter,cld)			       \

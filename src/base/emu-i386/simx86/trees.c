@@ -1299,21 +1299,15 @@ void e_invalidate(unsigned data, int cnt)
 	/* nothing to invalidate if there are no page protections */
 	if (!e_querymprotrange(data, cnt))
 		return;
-	/* for low mappings only invalidate if code, not if data */
-	if (data < LOWMEM_SIZE + HMASIZE) {
 #ifdef HOST_ARCH_X86
-		/* e_querymprotrange prevents coming here for sim */
-		assert (!config.cpusim);
-		if (e_querymark(data, cnt)) {
-			// no need to invalidate the whole page here,
-			// as the page does not need to be unprotected
-			InvalidateNodeRange(data, cnt, 0);
-			return;
-		}
-#endif
+	/* e_querymprotrange prevents coming here for sim */
+	assert(!config.cpusim);
+	if (!e_querymark(data, cnt))
 		return;
-	}
-	do_invalidate(data, cnt);
+	// no need to invalidate the whole page here,
+	// as the page does not need to be unprotected
+	InvalidateNodeRange(data, cnt, 0);
+#endif
 }
 
 void e_invalidate_pa(unsigned pa, int cnt)
