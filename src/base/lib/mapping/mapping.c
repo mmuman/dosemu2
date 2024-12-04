@@ -683,13 +683,13 @@ static void populate_aliasmap(unsigned char **map, unsigned char *addr,
 {
   int i;
 
-  for (i = 0; i < size >> PAGE_SHIFT; i++)
+  for (i = 0; i < PAGE_ALIGN(size) >> PAGE_SHIFT; i++)
     map[i] = addr ? addr + (i << PAGE_SHIFT) : NULL;
 }
 
 static unsigned char **alloc_aliasmap(unsigned char *addr, int size)
 {
-  unsigned char **ret = malloc((size >> PAGE_SHIFT) * sizeof(*ret));
+  unsigned char **ret = malloc((PAGE_ALIGN(size) >> PAGE_SHIFT) * sizeof(*ret));
   populate_aliasmap(ret, addr, size);
   return ret;
 }
@@ -890,7 +890,6 @@ static void hwram_update_aliasmap(struct hardware_ram *hw, unsigned addr,
 {
   int off = addr - hw->base;
   assert(!(off & (PAGE_SIZE - 1))); // page-aligned
-  assert(!(size & (PAGE_SIZE - 1))); // page-aligned
   // lowmem needs permanent aliasing
   assert(!(src == NULL && (hw->base + hw->size <= ALIAS_SIZE)));
   populate_aliasmap(&hw->aliasmap[off >> PAGE_SHIFT], src, size);
