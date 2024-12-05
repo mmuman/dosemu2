@@ -3334,6 +3334,7 @@ asm(".text\n"
     "push "R_REG(dx)"\n"
     "jmp *"R_REG(ax)"\n");
 ASMLINKAGE(void,do_seq_start,(void));
+__attribute__((optimize("omit-frame-pointer")))
 static unsigned Exec_x86_asm(unsigned *mem_ref, unsigned long *flg,
 		unsigned char *ecpu, unsigned char *SeqStart)
 {
