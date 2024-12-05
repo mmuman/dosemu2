@@ -323,7 +323,8 @@ static int vdeslirp_poll_to_slirp(int events) {
 	return ret;
 }
 
-static int vdeslirp_add_poll(int fd, int events, void *opaque) {
+static int vdeslirp_add_poll(int fd, int events, void *opaque)
+{
 	struct vdeslirp *slirp = opaque;
 	if (slirp->pfd_len >= slirp->pfd_size) {
 		int newsize = slirp->pfd_size + LIBSLIRP_POLLFD_SIZE_INCREASE;
@@ -384,7 +385,11 @@ static void *slirp_daemon(void *opaque) {
 		int pollout;
 		uint32_t timeout = -1;
 		slirp->pfd_len = 1;
+#if SLIRP_CONFIG_VERSION_MAX >= 6
+		slirp_pollfds_fill_socket(slirp->slirp, &timeout, vdeslirp_add_poll, slirp);
+#else
 		slirp_pollfds_fill(slirp->slirp, &timeout, vdeslirp_add_poll, slirp);
+#endif
 		update_ra_timeout(&timeout, slirp);
 		pollout = poll(slirp->pfd, slirp->pfd_len, timeout);
 		if (slirp->pfd[0].revents) {
