@@ -45,7 +45,7 @@
 #endif
 
 static int ffds[VGAEMU_MAX_MAPPINGS];
-#ifdef HAVE_DECL_UFFD_FEATURE_WP_ASYNC
+#if HAVE_DECL_UFFD_FEATURE_WP_ASYNC
 static int pagemap_fd;
 #endif
 static unsigned int base0;
@@ -81,7 +81,7 @@ static int uffd_preinit(int fd)
     uffdio_api.api = UFFD_API;
     uffdio_api.features = UFFD_FEATURE_PAGEFAULT_FLAG_WP |
             UFFD_FEATURE_WP_HUGETLBFS_SHMEM;
-#ifdef HAVE_DECL_UFFD_FEATURE_WP_ASYNC
+#if HAVE_DECL_UFFD_FEATURE_WP_ASYNC
     uffdio_api.features |= UFFD_FEATURE_WP_ASYNC;
 #endif
     err = ioctl(fd, UFFDIO_API, &uffdio_api);
@@ -236,7 +236,7 @@ int uffd_open(int sock)
 void uffd_init(int sock)
 {
     int i;
-#ifdef HAVE_DECL_UFFD_FEATURE_WP_ASYNC
+#if HAVE_DECL_UFFD_FEATURE_WP_ASYNC
     char buf[1024];
 #endif
 
@@ -246,7 +246,7 @@ void uffd_init(int sock)
         add_to_io_select_threaded(ffds[i], uffd_async, (void *)(uintptr_t)i);
 #endif
     }
-#ifdef HAVE_DECL_UFFD_FEATURE_WP_ASYNC
+#if HAVE_DECL_UFFD_FEATURE_WP_ASYNC
     snprintf(buf, sizeof(buf), "/proc/%i/pagemap", dpmi_pid);
     pagemap_fd = open(buf, O_RDONLY | O_CLOEXEC);
     assert(pagemap_fd != -1);
@@ -291,7 +291,7 @@ int uffd_wp(int idx, void *addr, size_t len, int wp)
     int err;
     struct uffdio_writeprotect wpdata;
 
-#ifdef HAVE_DECL_UFFD_FEATURE_WP_ASYNC
+#if HAVE_DECL_UFFD_FEATURE_WP_ASYNC
     if (!wp) {
         error("ufdd: dropping WP?\n");
         return 0;
