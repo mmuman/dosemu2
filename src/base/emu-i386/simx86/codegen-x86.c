@@ -3344,7 +3344,7 @@ static unsigned Exec_x86_asm(unsigned *mem_ref, unsigned long *flg,
 		"movq	%%rsp,%%r12\n"
 		"addq	$-128,%%rsp\n"	/* go below red zone		*/
 		"andq	$~15,%%rsp\n"	/* 16-byte stack alignment	*/
-		"push	"RE_REG(bp)"\n"
+		"push	"RE_REG(bp)"\n" // alignment
 #endif
 		"push	"RE_REG(bp)"\n"
 		"mov	%7, "RE_REG(bp)"\n"
@@ -3355,7 +3355,7 @@ static unsigned Exec_x86_asm(unsigned *mem_ref, unsigned long *flg,
 		"movq	%%r12,%%rsp\n"
 #endif
 		: "=d"(*flg),"=a"(ePC),"=D"(*mem_ref)
-		: "b"(ecpu),"d"(*flg),"a"(SeqStart),"R"(do_seq_start),
+		: "b"(ecpu),"d"(*flg),"a"(SeqStart),"r"(do_seq_start),
 		  "r"(mem_base)
 		: "memory", "cc", "ecx", "esi", "bp" EXEC_CLOBBERS
 	);
