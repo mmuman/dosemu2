@@ -3357,7 +3357,7 @@ static unsigned Exec_x86_asm(unsigned *mem_ref, unsigned long *flg,
 		: "=d"(*flg),"=a"(ePC),"=D"(*mem_ref)
 		: "b"(ecpu),"d"(*flg),"a"(SeqStart),"R"(do_seq_start),
 		  "m"(mem_base)
-		: "memory", "cc", "ecx", "esi" EXEC_CLOBBERS
+		: "memory", "cc", "ecx", "esi", "bp" EXEC_CLOBBERS
 	);
 	InCompiledCode = 0;
 	/* even though InCompiledCode is volatile, we also need a barrier */
