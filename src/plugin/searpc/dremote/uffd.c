@@ -92,7 +92,7 @@ static int uffd_preinit(int fd)
     return 0;
 }
 
-#ifndef HAVE_DECL_UFFD_FEATURE_WP_ASYNC
+#if !HAVE_DECL_UFFD_FEATURE_WP_ASYNC
 static void uffd_async(int fd, void *arg)
 {
     struct uffd_msg msg;
@@ -242,7 +242,7 @@ void uffd_init(int sock)
 
     for (i = 0; i < VGAEMU_MAX_MAPPINGS; i++) {
         ffds[i] = recv_fd(sock);
-#ifndef HAVE_DECL_UFFD_FEATURE_WP_ASYNC
+#if !HAVE_DECL_UFFD_FEATURE_WP_ASYNC
         add_to_io_select_threaded(ffds[i], uffd_async, (void *)(uintptr_t)i);
 #endif
     }
