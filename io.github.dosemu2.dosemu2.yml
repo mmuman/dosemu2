@@ -134,14 +134,14 @@ modules:
     cleanup:
       - '/include'
 
-  - name: fluidsynth
-    buildsystem: cmake
-    sources:
-      - type: git
-        url: https://github.com/FluidSynth/fluidsynth.git
-        branch: master
-    cleanup:
-      - '/include'
+#  - name: fluidsynth
+#    buildsystem: cmake
+#    sources:
+#      - type: git
+#        url: https://github.com/FluidSynth/fluidsynth.git
+#        branch: master
+#    cleanup:
+#      - '/include'
 
 #  - name: soundfont
 #    buildsystem: simple
