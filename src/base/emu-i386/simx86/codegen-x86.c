@@ -3345,19 +3345,19 @@ static unsigned Exec_x86_asm(unsigned *mem_ref, unsigned long *flg,
 		"movq	%%rsp,%%r12\n"
 		"addq	$-128,%%rsp\n"	/* go below red zone		*/
 		"andq	$~15,%%rsp\n"	/* 16-byte stack alignment	*/
-		"push	"RE_REG(bp)"\n" // alignment
 #endif
-		"push	"RE_REG(bp)"\n"
 		"mov	%[mb], "RE_REG(bp)"\n"
 		"call	*%[ss]\n"		/* call SeqStart                */
-		"pop	"RE_REG(bp)"\n"
 #ifdef __x86_64__
-		"pop	"RE_REG(bp)"\n"
 		"movq	%%r12,%%rsp\n"
 #endif
 		: "=d"(*flg),"=a"(ePC),"=D"(*mem_ref)
 		: "b"(ecpu),"d"(*flg),"a"(SeqStart),[ss]"r"(do_seq_start),
 		  [mb]"r"(mem_base)
+		/* Note: we need to clobber "class-less" regs (like %rbp) even
+		 * if we save/restore them, to avoid gcc from allocating
+		 * them to "r". But in this case we don't need to save/restore.
+		 */
 		: "memory", "cc", "ecx", "esi", "bp" EXEC_CLOBBERS
 	);
 	InCompiledCode = 0;
