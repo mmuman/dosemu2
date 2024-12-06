@@ -383,10 +383,6 @@ void map_memory_space(void)
     leavedos(98);
   }
   mem_reserve(memsize);
-  mem_base_mask = ~(uintptr_t)0;
-#ifdef __x86_64__
-  if (_MAP_32BIT) mem_base_mask = 0xffffffffu;
-#endif
   register_hardware_ram_virtual('L', 0, LOWMEM_SIZE + HMASIZE, 0);
   result = alias_mapping_high(MAPPING_LOWMEM, 0, memsize,
 			      PROT_READ | PROT_WRITE | PROT_EXEC, lowmem);

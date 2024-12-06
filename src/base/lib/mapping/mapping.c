@@ -73,7 +73,6 @@ static struct mem_map_struct kmem_map[MAX_KMEM_MAPPINGS];
 #endif
 
 static int init_done = 0;
-uintptr_t mem_base_mask;
 static struct {
   unsigned char *base;
   size_t size;
