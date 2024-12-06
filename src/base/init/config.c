@@ -572,13 +572,13 @@ static void move_dosemu_lib_dir(void)
   char buf[256];
 
   if (!dosemu_plugin_dir_path)
-    dosemu_plugin_dir_path = prefix(DOSEMUPLUGINDIR);
+    dosemu_plugin_dir_path = path_prefix(DOSEMUPLUGINDIR);
   if (!dosemu_lib_dir_path)
-    dosemu_lib_dir_path = prefix(DOSEMULIB_DEFAULT);
+    dosemu_lib_dir_path = path_prefix(DOSEMULIB_DEFAULT);
   setenv("DOSEMU_LIB_DIR", dosemu_lib_dir_path, 1);
   set_freedos_dir();
   if (!commands_path)
-    commands_path = prefix(DOSEMUCMDS_DEFAULT);
+    commands_path = path_prefix(DOSEMUCMDS_DEFAULT);
   if (access(commands_path, R_OK | X_OK) != 0) {
     error("dosemu2 commands not found at %s\n", commands_path);
     free(commands_path);

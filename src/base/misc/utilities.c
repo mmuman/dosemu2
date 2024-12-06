@@ -570,7 +570,7 @@ char *get_dosemu_local_home(void)
     return ret;
 }
 
-char *prefix(const char *suffix)
+char *path_prefix(const char *suffix)
 {
     char *p1, *s, *p;
     char *ret = NULL;

@@ -39,7 +39,7 @@ void dosemu_error(const char *fmt, ...) FORMAT(printf, 1, 2);
 void *load_plugin(const char *plugin_name);
 void close_plugin(void *handle);
 
-char *prefix(const char *suffix);
+char *path_prefix(const char *suffix);
 int mktmp_in(const char *dir_tmpl, const char *fname, mode_t mode,
     char *dir_name, int dir_name_len);
 
