@@ -3348,16 +3348,16 @@ static unsigned Exec_x86_asm(unsigned *mem_ref, unsigned long *flg,
 		"push	"RE_REG(bp)"\n" // alignment
 #endif
 		"push	"RE_REG(bp)"\n"
-		"mov	%7, "RE_REG(bp)"\n"
-		"call	*%6\n"		/* call SeqStart                */
+		"mov	%[mb], "RE_REG(bp)"\n"
+		"call	*%[ss]\n"		/* call SeqStart                */
 		"pop	"RE_REG(bp)"\n"
 #ifdef __x86_64__
 		"pop	"RE_REG(bp)"\n"
 		"movq	%%r12,%%rsp\n"
 #endif
 		: "=d"(*flg),"=a"(ePC),"=D"(*mem_ref)
-		: "b"(ecpu),"d"(*flg),"a"(SeqStart),"r"(do_seq_start),
-		  "r"(mem_base)
+		: "b"(ecpu),"d"(*flg),"a"(SeqStart),[ss]"r"(do_seq_start),
+		  [mb]"r"(mem_base)
 		: "memory", "cc", "ecx", "esi", "bp" EXEC_CLOBBERS
 	);
 	InCompiledCode = 0;
