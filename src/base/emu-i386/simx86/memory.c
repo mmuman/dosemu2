@@ -461,6 +461,16 @@ int e_handle_fault(sigcontext_t *scp)
 {
 	if (!InCompiledCode)
 		return 0;
+#ifdef __x86_64__
+	if (IS_EMU_JIT() && _scp_trapno == 0xd &&
+			_scp_rbp + _scp_rdi >= (1ULL << 47)) {
+		/* translate to PF */
+		_scp_trapno = 0xe;
+		_scp_cr2 = _scp_rbp + _scp_rdi;
+		error("Non-canonical address exception at 0x%"PRI_RG"\n", _scp_cr2);
+		return 0;
+	}
+#endif
 	/* page-faults are handled not here and only DE remains */
 	if (_scp_trapno != 0) {
 		error("Fault %i in jit-compiled code\n", _scp_trapno);

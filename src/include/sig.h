@@ -118,6 +118,8 @@ typedef mcontext_t sigcontext_t;
 #define _scp_ds     (((union g_reg *)&(scp->gregs[REG_TRAPNO]))->w[2])
 #define _scp_rip    (scp->gregs[REG_RIP])
 #define _scp_rsp    (scp->gregs[REG_RSP])
+#define _scp_rbp    (scp->gregs[REG_RBP])
+#define _scp_rdi    (scp->gregs[REG_RDI])
 #define _scp_edi    DWORD_(scp->gregs[REG_RDI])
 #define _scp_esi    DWORD_(scp->gregs[REG_RSI])
 #define _scp_ebp    DWORD_(scp->gregs[REG_RBP])
