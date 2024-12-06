@@ -22,6 +22,11 @@
 #include "cpu-emu.h"
 #include "emudpmi.h"
 #include "dnative.h"
+/* optimize direct LDT writes */
+#define DIRECT_LDT_OPT 1
+#if DIRECT_LDT_OPT
+#include "../msdos/msdos_ldt.h"
+#endif
 
 const struct dnative_ops *dnops;
 
@@ -89,6 +94,11 @@ static int handle_pf(cpuctx_t *scp)
 {
     int rc;
     dosaddr_t cr2 = _cr2;
+
+#if DIRECT_LDT_OPT
+    if (msdos_ldt_pagefault(scp))
+        return DPMI_RET_CLIENT;
+#endif
 #ifdef X86_EMULATOR
 #ifdef HOST_ARCH_X86
     /* DPMI code touches cpuemu prot */
