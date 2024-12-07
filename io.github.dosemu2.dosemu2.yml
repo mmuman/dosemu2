@@ -4,7 +4,6 @@ runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.llvm18
-  - org.freedesktop.Sdk.Extension.toolchain-i386
 command: dosemu
 
 modules:
@@ -23,6 +22,20 @@ modules:
       - type: git
         url: https://github.com/stsp/thunk_gen.git
         branch: main
+    cleanup:
+      - '*'
+
+  - name: binutils
+    buildsystem: autotools
+    sources:
+      - type: git
+        url: https://sourceware.org/git/binutils-gdb.git
+        branch: master
+    config-opts:
+      - --target=i686-unknown-linux-gnu
+      - --disable-gdb
+      - --disable-texinfo
+      - --disable-sim
     cleanup:
       - '*'
 
