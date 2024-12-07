@@ -16,7 +16,7 @@
 #ifndef __MSDOS_H__
 #define __MSDOS_H__
 
-void msdos_setup(void);
-void msdos_reset(void);
+void _msdos_reset(void);
+const char *_msdos_describe_selector(unsigned short sel);
 
 #endif

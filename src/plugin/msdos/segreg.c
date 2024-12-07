@@ -241,5 +241,5 @@ void msdos_fault_handler(cpuctx_t *scp, void *arg)
 void msdos_pagefault_handler(cpuctx_t *scp, void *arg)
 {
     void *(*cb)(void) = arg;
-    do_fault(scp, cb(), msdos_ldt_pagefault);
+    do_fault(scp, cb(), _msdos_ldt_pagefault);
 }

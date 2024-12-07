@@ -268,14 +268,14 @@ out:
   dpmi_ext_ldt_monitor_enable(1);
 }
 
-int msdos_ldt_access(dosaddr_t cr2)
+int _msdos_ldt_access(dosaddr_t cr2)
 {
     if (!ldt_alias)
         return 0;
     return cr2 >= ldt_alias && cr2 < ldt_alias + LDT_ENTRIES * LDT_ENTRY_SIZE;
 }
 
-void msdos_ldt_write(cpuctx_t *scp, uint32_t op, int len,
+void _msdos_ldt_write(cpuctx_t *scp, uint32_t op, int len,
     dosaddr_t cr2)
 {
     if (!len) {
@@ -286,7 +286,7 @@ void msdos_ldt_write(cpuctx_t *scp, uint32_t op, int len,
     direct_ldt_write(scp, cr2 - ldt_alias, (char *)&op, len);
 }
 
-int msdos_ldt_pagefault(cpuctx_t *scp)
+int _msdos_ldt_pagefault(cpuctx_t *scp)
 {
     uint32_t op;
     int len;

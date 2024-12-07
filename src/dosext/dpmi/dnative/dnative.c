@@ -25,7 +25,7 @@
 /* optimize direct LDT writes */
 #define DIRECT_LDT_OPT 1
 #if DIRECT_LDT_OPT
-#include "../msdos/msdos_ldt.h"
+#include "msdoshlp.h"
 #endif
 
 const struct dnative_ops *dnops;

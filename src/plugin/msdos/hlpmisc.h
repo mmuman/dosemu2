@@ -2,7 +2,7 @@
 #define HLPMISC_H
 
 #include "cpu.h"
-#include "djdpmi.h"
+#include "dpmi_api.h"
 #include "emudpmi.h"
 
 #ifdef DOSEMU

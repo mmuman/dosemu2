@@ -52,7 +52,7 @@
 #include "cpu-emu.h"
 #include "codegen-arch.h"
 #include "protmode.h"
-#include "../dosext/dpmi/msdos/msdos_ldt.h"
+#include "msdoshlp.h"
 
 Descriptor *GDT = NULL;
 Descriptor *LDT = NULL;

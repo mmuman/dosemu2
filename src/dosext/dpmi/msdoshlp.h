@@ -78,4 +78,21 @@ int doshlp_idle(void);
 
 Bit16u hlt_register_handler_pm(emu_hlt_t handler);
 
+struct msdos_ldt_ops {
+    void (*reset)(void);
+    int (*access)(dosaddr_t cr2);
+    void (*write)(cpuctx_t *scp, uint32_t op, int len, dosaddr_t cr2);
+    int (*pagefault)(cpuctx_t *scp);
+    const char *(*describe_selector)(unsigned short sel);
+};
+
+void msdos_register_ops(const struct msdos_ldt_ops *ops);
+void msdos_setup(void);
+void msdos_reset(void);
+int msdos_ldt_access(dosaddr_t cr2);
+void msdos_ldt_write(cpuctx_t *scp, uint32_t op, int len,
+    dosaddr_t cr2);
+int msdos_ldt_pagefault(cpuctx_t *scp);
+const char *msdos_describe_selector(unsigned short sel);
+
 #endif
