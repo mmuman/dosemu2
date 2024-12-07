@@ -109,6 +109,7 @@ tar: distclean
 
 flatpak-build:
 	flatpak-builder --ccache --force-clean --user --repo=repo \
+	  --install-deps-from=flathub \
 	  --install builddir io.github.dosemu2.dosemu2.yml
 
 flatpak-run:
