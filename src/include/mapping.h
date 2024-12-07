@@ -84,7 +84,7 @@ int mprotect_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect);
 int mprotect_vga(int idx, dosaddr_t targ, size_t mapsize, int protect);
 int restore_mapping(int cap, dosaddr_t targ, size_t mapsize);
 /* below wrapper is needed only for remoting the mapping subsystem */
-void *mmap_shm_ux(void *addr, size_t length, int prot, int fd);
+void *mmap_shm_mapping(dosaddr_t targ, size_t length, int prot, int fd);
 
 typedef int mmap_hook_type(void *addr, size_t length, int prot,
                            int flags, int fd, off_t offset);
