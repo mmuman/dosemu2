@@ -108,6 +108,7 @@ tar: distclean
 	VERSION=`cat VERSION` && cd .. && tar czvf dosemu-$$VERSION.tgz dosemu-$$VERSION
 
 flatpak-build:
+	git clean -f
 	flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 	flatpak-builder --ccache --force-clean --user --repo=repo \
 	  --install-deps-from=flathub \
