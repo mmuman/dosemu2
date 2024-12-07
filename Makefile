@@ -5,7 +5,7 @@ all: default
 
 srcdir=.
 top_builddir=.
-ifeq ($(filter deb rpm %/configure configure,$(MAKECMDGOALS)),)
+ifeq ($(filter deb rpm flatpak-% %/configure configure,$(MAKECMDGOALS)),)
   -include Makefile.conf
 endif
 REALTOPDIR ?= $(abspath $(srcdir))
@@ -107,7 +107,7 @@ pristine distclean mrproper:  Makefile.conf docsclean
 tar: distclean
 	VERSION=`cat VERSION` && cd .. && tar czvf dosemu-$$VERSION.tgz dosemu-$$VERSION
 
-flatpak-build: clean
+flatpak-build:
 	flatpak-builder --ccache --force-clean --user --repo=repo \
 	  --install builddir io.github.dosemu2.dosemu2.yml
 
