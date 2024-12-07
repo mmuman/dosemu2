@@ -111,7 +111,7 @@ static unsigned do_find_hardware_ram(dosaddr_t va, uint32_t size,
 static void hwram_update_aliasmap(struct hardware_ram *hw, unsigned addr,
 	int size, unsigned char *src);
 static int mprotect_hook(void *addr, size_t length, int prot);
-static int madvise_hook(void *addr, size_t length, int flags);
+static int madvise_mapping(dosaddr_t targ, size_t length, int flags);
 
 static void update_aliasmap(dosaddr_t dosaddr, size_t mapsize,
 			    unsigned char *unixaddr)
@@ -1025,7 +1025,7 @@ int mcommit(void *ptr, size_t size)
   if (err == -1)
     return 0;
 #if HAVE_DECL_MADV_POPULATE_WRITE
-  err = madvise_hook(ptr, size, MADV_POPULATE_WRITE);
+  err = madvise_mapping(targ, size, MADV_POPULATE_WRITE);
   if (err)
     perror("madvise()");
 #endif
@@ -1112,10 +1112,21 @@ static int mprotect_hook(void *addr, size_t length, int prot)
   return err;
 }
 
-static int madvise_hook(void *addr, size_t length, int flags)
+static int madvise_mapping(dosaddr_t targ, size_t length, int flags)
 {
-  int err = madvise(addr, length, flags);
-  if (err || (unsigned char *)addr < mem_bases[MEM_BASE].base ||
+  int i, err;
+  void *addr;
+
+  for (i = 0; i < MAX_BASES; i++) {
+    addr = MEM_BASE32x(targ, i);
+    if (addr == MAP_FAILED)
+      continue;
+    err = madvise(addr, length, flags);
+    if (err)
+      return err;
+  }
+  addr = MEM_BASE32(targ);
+  if ((unsigned char *)addr < mem_bases[MEM_BASE].base ||
       (unsigned char *)addr + length > mem_bases[MEM_BASE].base +
       mem_bases[MEM_BASE].size)
     return err;
