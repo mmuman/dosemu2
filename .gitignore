@@ -1,10 +1,6 @@
-/install-sh
-/config.status
-/config.sub
 *.d
 !dosrc.d
 *.o
-configure
 config.log
 aclocal.m4
 autom4te.cache
