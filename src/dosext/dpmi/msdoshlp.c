@@ -76,6 +76,8 @@ struct msdos_ops {
 };
 static struct msdos_ops msdos;
 
+static const struct msdos_ldt_ops *msdos_ldt;
+
 struct exec_helper_s {
     int tid;
     far_t entry;
@@ -728,4 +730,50 @@ Bit16u hlt_register_handler_pm(emu_hlt_t handler)
 {
     return hlt_register_handler(hlt_state, handler) +
             DPMI_SEL_OFF(MSDOS_hlt_start);
+}
+
+void msdos_register_ops(const struct msdos_ldt_ops *ops)
+{
+    assert(!msdos_ldt);
+    msdos_ldt = ops;
+}
+
+void msdos_setup(void)
+{
+    load_plugin("msdos");
+}
+
+void msdos_reset(void)
+{
+    if (!msdos_ldt)
+        return;
+    msdos_ldt->reset();
+}
+
+int msdos_ldt_access(dosaddr_t cr2)
+{
+    if (!msdos_ldt)
+        return 0;
+    return msdos_ldt->access(cr2);
+}
+
+void msdos_ldt_write(cpuctx_t *scp, uint32_t op, int len, dosaddr_t cr2)
+{
+    if (!msdos_ldt)
+        return;
+    msdos_ldt->write(scp, op, len, cr2);
+}
+
+int msdos_ldt_pagefault(cpuctx_t *scp)
+{
+    if (!msdos_ldt)
+        return 0;
+    return msdos_ldt->pagefault(scp);
+}
+
+const char *msdos_describe_selector(unsigned short sel)
+{
+    if (!msdos_ldt)
+        return NULL;
+    return msdos_ldt->describe_selector(sel);
 }

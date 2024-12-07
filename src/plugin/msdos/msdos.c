@@ -27,6 +27,7 @@
 
 #include "cpu.h"
 #ifdef DOSEMU
+#include "init.h"
 #include "utilities.h"
 #include "dos2linux.h"
 #define SUPPORT_DOSEMU_HELPERS
@@ -41,7 +42,6 @@
 #include "callbacks.h"
 #include "segreg_priv.h"
 #include "msdos_priv.h"
-#include "msdos_ex.h"
 #include "msdos.h"
 
 #ifdef SUPPORT_DOSEMU_HELPERS
@@ -187,7 +187,15 @@ static void do_retf32(cpuctx_t *scp)
     _esp += 8;
 }
 
-void msdos_setup(void)
+static const struct msdos_ldt_ops ops = {
+    .reset = _msdos_reset,
+    .access = _msdos_ldt_access,
+    .write = _msdos_ldt_write,
+    .pagefault = _msdos_ldt_pagefault,
+    .describe_selector = _msdos_describe_selector,
+};
+
+CONSTRUCTOR(static void _msdos_setup(void))
 {
     msdoshlp_init(msdos_is_32, num_ints);
     lio_init();
@@ -195,9 +203,10 @@ void msdos_setup(void)
     /* bitness may change on reinit so we specify particular retf version */
     doshlp_setup(&reinit_hlp, "msdos reinit thr", reinit_thr,
             MSDOS_CLIENT.is_32 ? do_retf32 : do_retf16);
+    msdos_register_ops(&ops);
 }
 
-void msdos_reset(void)
+void _msdos_reset(void)
 {
     while (msdos_client_max > 0) {
 	int prev;
@@ -2310,7 +2319,7 @@ int msdos_post_extender(cpuctx_t *scp,
     return ret;
 }
 
-const char *msdos_describe_selector(unsigned short sel)
+const char *_msdos_describe_selector(unsigned short sel)
 {
     int i;
     struct seg_sel *m = NULL;

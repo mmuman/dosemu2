@@ -48,8 +48,6 @@ extern long int __sysconf (int); /* for Debian eglibc 2.13-3 */
 #include "hlt.h"
 #include "emudpmi.h"
 #include "dpmisel.h"
-#include "msdos.h"
-#include "msdos_ex.h"
 #include "msdoshlp.h"
 #include "vxd.h"
 #include "bios.h"

@@ -41,7 +41,7 @@
 #include "codegen-arch.h"
 #include "trees.h"
 #include "emudpmi.h"
-#include "../dosext/dpmi/msdos/msdos_ldt.h"
+#include "msdoshlp.h"
 
 #include "video.h"
 #include "bios.h"
