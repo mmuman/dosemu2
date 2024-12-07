@@ -21,8 +21,6 @@ else
 	$< || true
 endif
 
-install: changelog
-
 default install: config.status src/include/config.hh etc/dosemu.desktop
 	@$(MAKE) -C man $@
 	@$(MAKE) -C src $@
