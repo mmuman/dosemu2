@@ -134,24 +134,24 @@ modules:
     cleanup:
       - '/include'
 
-#  - name: fluidsynth
-#    buildsystem: cmake
-#    sources:
-#      - type: git
-#        url: https://github.com/FluidSynth/fluidsynth.git
-#        branch: master
-#    cleanup:
-#      - '/include'
+  - name: fluidsynth
+    buildsystem: cmake
+    sources:
+      - type: git
+        url: https://github.com/FluidSynth/fluidsynth.git
+        branch: master
+    cleanup:
+      - '/include'
 
-#  - name: soundfont
-#    buildsystem: simple
-#    sources:
-#      - type: git
-#        url: https://github.com/TheGammaSqueeze/jelos_generaluser-gs.git
-#        branch: main
-#    build-commands:
-#      - mkdir -p ${FLATPAK_DEST}/share/soundfonts
-#      - cp "GeneralUser GS v1.471.sf2" ${FLATPAK_DEST}/share/soundfonts/default.sf2
+  - name: soundfont
+    buildsystem: simple
+    sources:
+      - type: git
+        url: https://github.com/TheGammaSqueeze/jelos_generaluser-gs.git
+        branch: main
+    build-commands:
+      - mkdir -p ${FLATPAK_DEST}/share/soundfonts
+      - cp "GeneralUser GS v1.471.sf2" ${FLATPAK_DEST}/share/soundfonts/default.sf2
 
   - name: libb64
     buildsystem: simple
