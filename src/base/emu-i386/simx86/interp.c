@@ -567,7 +567,7 @@ static unsigned int interp_pre(unsigned int PC, const int mode, int *_NewNode,
 		if (debug_level('e')>2) {
 			char *ds;
 			unsigned short ocs = TheCPU.cs;
-			ds = e_emu_disasm(MEM_BASE32(P0),(~mode&3),ocs);
+			ds = e_emu_disasm(EMU_BASE32(P0),(~mode&3),ocs);
 			if (debug_level('e')>2) e_printf("  %s\n", ds);
 		}
 		return PC;

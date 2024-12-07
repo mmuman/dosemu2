@@ -584,6 +584,7 @@ dpmi_pm_block *DPMI_mallocShared(dpmi_pm_block_root *root,
     int fd = -1;
     dpmi_pm_block *ptr;
     void *addr, *addr2;
+    dosaddr_t targ;
     char *shmname;
     struct stat st;
     void *exlock, *shlock;
@@ -649,8 +650,9 @@ dpmi_pm_block *DPMI_mallocShared(dpmi_pm_block_root *root,
     }
     if (!(flags & SHM_NOEXEC))
         prot |= PROT_EXEC;
-    register_hardware_ram_virtual('S', DOSADDR_REL(addr), size, DOSADDR_REL(addr));
-    addr2 = mmap_shm_ux(addr, size, prot, fd);
+    targ = DOSADDR_REL(addr);
+    register_hardware_ram_virtual('S', targ, size, targ);
+    addr2 = mmap_shm_mapping(targ, size, prot, fd);
     close(fd);
     fd = -1;
     if (addr2 != addr) {
@@ -703,6 +705,7 @@ static dpmi_pm_block *DPMI_mallocSharedNS_common(dpmi_pm_block_root *root,
     int i, err;
     dpmi_pm_block *ptr;
     void *addr, *addr2;
+    dosaddr_t targ;
     void *shlock, *dlock;
     char *ddname = strrchr(dname, '/') + 1;
     char shlock_dir[256];
@@ -733,8 +736,9 @@ static dpmi_pm_block *DPMI_mallocSharedNS_common(dpmi_pm_block_root *root,
     }
     if (!(flags & SHM_NOEXEC))
         prot |= PROT_EXEC;
-    register_hardware_ram_virtual('S', DOSADDR_REL(addr), size, DOSADDR_REL(addr));
-    addr2 = mmap_shm_ux(addr, size, prot, fd);
+    targ = DOSADDR_REL(addr);
+    register_hardware_ram_virtual('S', targ, size, targ);
+    addr2 = mmap_shm_mapping(targ, size, prot, fd);
     close(fd);
     fd = -1;
     if (addr2 != addr) {

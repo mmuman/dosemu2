@@ -384,7 +384,7 @@ void map_memory_space(void)
   }
   mem_reserve(memsize);
   register_hardware_ram_virtual('L', 0, LOWMEM_SIZE + HMASIZE, 0);
-  result = alias_mapping_high(MAPPING_LOWMEM, 0, memsize,
+  result = alias_mapping_high(MAPPING_INIT_LOWRAM, 0, memsize,
 			      PROT_READ | PROT_WRITE | PROT_EXEC, lowmem);
   if (result == -1) {
     perror ("DPMI mmap");

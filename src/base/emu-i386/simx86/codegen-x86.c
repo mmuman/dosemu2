@@ -3353,7 +3353,7 @@ static unsigned Exec_x86_asm(unsigned *mem_ref, unsigned long *flg,
 #endif
 		: "=d"(*flg),"=a"(ePC),"=D"(*mem_ref)
 		: "b"(ecpu),"d"(*flg),"a"(SeqStart),[ss]"r"(do_seq_start),
-		  [mb]"r"(mem_base)
+		  [mb]"r"(jit_base)
 		/* Note: we need to clobber "class-less" regs (like %rbp) even
 		 * if we save/restore them, to avoid gcc from allocating
 		 * them to "r". But in this case we don't need to save/restore.

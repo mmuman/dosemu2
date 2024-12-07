@@ -247,13 +247,13 @@ char *e_print_regs(void)
 		dosaddr_t csp = LONG_CS+TheCPU.eip;
 		dosaddr_t st = LONG_SS+TheCPU.esp;
 		if (csp < 0x110000 || dpmi_is_valid_range(csp, 4096)) {
-			unsigned char *op = MEM_BASE32(csp);
+			unsigned char *op = EMU_BASE32(csp);
 			for (i=(ERB_L5+ERB_LEFTM); i<(ERB_L6); i+=3) {
 			   exprintb(*op++,buf,i);
 			}
 		}
 		if (st < 0x110000 || dpmi_is_valid_range(st, 4096)) {
-			unsigned short *stk = (unsigned short *)MEM_BASE32(st);
+			unsigned short *stk = (unsigned short *)EMU_BASE32(st);
 			for (i=(ERB_L6+ERB_LEFTM); i<(ERB_L7-2); i+=5) {
 			   exprintw(*stk++,buf,i);
 			}
@@ -318,7 +318,7 @@ char *e_emu_disasm(unsigned char *org, int is32, unsigned int refseg)
      segbase = GetSegmentBase(refseg);
    else
      segbase = refseg * 16;
-   code = DOSADDR_REL(org);
+   code = EMUADDR_REL(org);
    org2 = code - segbase;
 #ifdef USE_MHPDBG
    rc = dis_8086(code, frmtbuf, is32, &ref, segbase);
@@ -355,7 +355,7 @@ char *e_scp_disasm(cpuctx_t *scp, int pmode)
    seg = _cs;
    refseg = seg;
    if (!(seg & 0x0004)) {
-      csp2 = org = DOSADDR_REL(LINP(_rip)); /* XXX bogus for x86_64 */
+      csp2 = org = EMUADDR_REL(LINP(_rip)); /* XXX bogus for x86_64 */
    }
    else {
       csp2 = 0;
@@ -370,7 +370,7 @@ char *e_scp_disasm(cpuctx_t *scp, int pmode)
    	&ref, (pmode? csp2 : refseg * 16));
 
    pb = buf;
-   org2 = MEM_BASE32(org);
+   org2 = EMU_BASE32(org);
    while ((*org2&0xfc)==0x64) org2++;	/* skip most prefixes */
    if ((debug_level('t')>3)||(InterOps[*org2]&2))
 	pb += sprintf(pb,"%s",e_print_scp_regs(scp,pmode));

@@ -419,7 +419,7 @@ int e_handle_pagefault(dosaddr_t addr, unsigned err, sigcontext_t *scp)
 	if (in_vm86)
 		p = SEG_ADR((unsigned char *), cs, ip);
 	else if (DPMIValidSelector(_scp_cs))
-		p = (unsigned char *)MEM_BASE32(GetSegmentBase(_scp_cs) + _scp_rip);
+		p = (unsigned char *)EMU_BASE32(GetSegmentBase(_scp_cs) + _scp_rip);
 	else
 		p = (unsigned char *) _scp_rip;
 	if (debug_level('e')>1 || in_dosemu) {
@@ -479,7 +479,7 @@ int e_handle_fault(sigcontext_t *scp)
 	TheCPU.err = EXCP00_DIVZ + _scp_trapno;
 	_scp_eax = TheCPU.cr2;
 	_scp_edx = _scp_eflags;
-	TheCPU.cr2 = DOSADDR_REL(LINP(_scp_cr2));
+	TheCPU.cr2 = EMUADDR_REL(LINP(_scp_cr2));
 	_scp_rip = *(long *)_scp_rsp;
 	_scp_rsp += sizeof(long);
 	return 1;
