@@ -2850,6 +2850,10 @@ static void vgaemu_adjust_instremu(int value)
       v_printf("Seq_write_value: instemu on\n");
       vga.inst_emu = value;
       pthread_mutex_lock(&prot_mtx);
+      /* protect entire LFB to avoid the update thread reprotecting it */
+      for (i = 0; i < vga.mem.map[VGAEMU_MAP_LFB_MODE].pages; i++)
+	vga_emu_protect_page(vga.mem.map[VGAEMU_MAP_LFB_MODE].base_page + i,
+		DEF_PROT, 1);
       for (i = 0; i < vga.mem.map[VGAEMU_MAP_BANK_MODE].pages; i++)
 	_vga_emu_adjust_protection(i, NONE, 1, 1);
       pthread_mutex_unlock(&prot_mtx);
@@ -2860,6 +2864,10 @@ static void vgaemu_adjust_instremu(int value)
       vga.inst_emu = value;
       vgaemu_map_bank();	// mapping was disabled, so restore
       dirty_all_video_pages();
+      /* unprotect entire LFB to avoid the update thread reprotecting it */
+      for (i = 0; i < vga.mem.map[VGAEMU_MAP_LFB_MODE].pages; i++)
+	vga_emu_protect_page(vga.mem.map[VGAEMU_MAP_LFB_MODE].base_page + i,
+		RW, 1);
     }
   }
   if (changed &&
