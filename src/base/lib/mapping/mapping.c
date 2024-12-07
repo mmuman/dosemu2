@@ -539,7 +539,7 @@ void mapping_init(void)
     }
     if (i >= numdrivers) {
       error("Wrong mapping driver specified: %s\n", config.mappingdriver);
-      leavedos(2);
+      exit(2);
       return;
     }
     if (!mappingdrv[i]->open(MAPPING_PROBE)) {
