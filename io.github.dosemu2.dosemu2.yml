@@ -104,7 +104,8 @@ modules:
   - name: comcom64
     buildsystem: simple
     build-commands:
-      - make -j ${FLATPAK_BUILDER_N_JOBS} PREFIX=${FLATPAK_DEST}
+      - make -j ${FLATPAK_BUILDER_N_JOBS} PREFIX=${FLATPAK_DEST} \
+          CROSS_PREFIX=i686-unknown-linux-gnu-
       - make install PREFIX=${FLATPAK_DEST}
     sources:
       - type: git
