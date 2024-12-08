@@ -1,4 +1,4 @@
-from os import uname, access, R_OK, W_OK
+from os import uname, environ, access, R_OK, W_OK
 from shutil import copy
 
 
@@ -23,6 +23,9 @@ def _dotest(self, cpu_vm, cpu_vm_dpmi):
 
     if cpu_vm == 'native' and uname()[4] != 'i686':
         self.skipTest("native vm86() only on 32bit x86")
+
+    if cpu_vm_dpmi == 'native' and environ.get("SKIP_NATIVE_DPMI"):
+        self.skipTest("no native dpmi")
 
     edir = self.topdir / "test" / "cpu"
 
