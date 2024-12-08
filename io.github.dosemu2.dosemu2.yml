@@ -183,6 +183,7 @@ modules:
   - name: dosemu2
     buildsystem: autotools
     build-options:
+      env: ['CROSS_PREFIX=i686-unknown-linux-gnu-']
       append-path: /app/sbin
     sources:
       - type: dir
