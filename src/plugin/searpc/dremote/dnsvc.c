@@ -54,10 +54,7 @@ static int dnsrv_init(const char *svc_name, int fd, void *arg)
 static void bad_rpc(const char *func, const char *msg)
 {
     fprintf(stderr, "RPC failure: %s: %s\n", func, msg);
-    if (!exited) {
-        exited++;
-        leavedos(5);
-    }
+    exit(5);
 }
 
 static int remote_mmap(void *addr, size_t length, int prot, int flags,
@@ -127,7 +124,7 @@ static int remote_dpmi_setup(void)
         return -1;
     rpc_shared_page = alloc_mapping(MAPPING_OTHER, RPC_SHARED_SIZE);
     assert(rpc_shared_page != MAP_FAILED);
-    clnt = clnt_init(&sock_tx, dnsrv_init, NULL, NULL, svc_ex, "dnrpc",
+    clnt = clnt_init(&sock_tx, dnsrv_init, NULL, dnrpc_exiting, svc_ex, "dnrpc",
             &dpmi_pid);
     if (!clnt) {
         fprintf(stderr, "failure registering RPC\n");
@@ -143,7 +140,7 @@ static int _remote_dpmi_done(void)
 {
     int ret;
     GError *error = NULL;
-    searpc_client_call__int(clnt, "done_1", &error, 0);
+    ret = searpc_client_call__int(clnt, "done_1", &error, 0);
     CHECK_RPC(error);
     return ret;
 }

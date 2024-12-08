@@ -2,6 +2,7 @@
 #define DNRPCDEFS_H
 
 int dnrpc_srv_init(const char *svc_name, int fd);
+int dnrpc_exiting(void);
 
 extern void *rpc_shared_page;
 

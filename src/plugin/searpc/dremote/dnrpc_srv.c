@@ -37,6 +37,7 @@
 #include "dnrpcdefs.h"
 
 static int sock_rx;
+static int exiting;
 
 static int mmap_1_svc(uint64_t addr, uint64_t length, int prot, int flags,
         uint64_t offset)
@@ -75,6 +76,7 @@ static int setup_1_svc(void)
 static int done_1_svc(void)
 {
     dnops->done();
+    exiting++;
     return 0;
 }
 
@@ -170,4 +172,9 @@ int dnrpc_srv_init(const char *svc_name, int fd)
         return -1;
     }
     return (plu ? 0 : -1);
+}
+
+int dnrpc_exiting(void)
+{
+    return exiting;
 }
