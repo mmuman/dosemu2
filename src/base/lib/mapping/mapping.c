@@ -1189,3 +1189,15 @@ int mprotect_vga(int idx, dosaddr_t targ, size_t mapsize, int protect)
     err = mapping_hook->wp_vga(idx, addr, mapsize, wp);
   return err;
 }
+
+int mapping_is_mapped(void *addr)
+{
+  int i;
+
+  for (i = 0; i < MAX_BASES; i++) {
+    if ((unsigned char *)addr >= mem_bases[i].base &&
+        (unsigned char *)addr < mem_bases[i].base + mem_bases[i].size)
+      return 1;
+  }
+  return 0;
+}
