@@ -93,7 +93,14 @@ if test -z "$AS"; then
     ASFLAGS="-xassembler -c -"
   fi
 fi
-AC_PATH_PROGS([XAS], [i686-linux-gnu-as i386-elf-as])
+if test -n "$CROSS_PREFIX"; then
+  AC_PATH_PROG([XAS], [${CROSS_PREFIX}as])
+  if test -z "$XAS"; then
+    AC_MSG_ERROR([${CROSS_PREFIX}as not found, CROSS_PREFIX is wrong])
+  fi
+else
+  AC_PATH_PROGS([XAS], [i686-linux-gnu-as i386-elf-as])
+fi
 if test -z "$XAS"; then
   if test "$CONFIG_HOST" = "Darwin"; then
     AC_MSG_ERROR([Please install i386-elf-binutils from https://github.com/nativeos/homebrew-i386-elf-toolchain])
@@ -119,7 +126,14 @@ AC_PATH_PROGS([LD], [ld ld.lld])
 if test -z "$LD"; then
   AC_MSG_ERROR(ld not found)
 fi
-AC_PATH_PROGS([AS_LD], [i686-linux-gnu-ld i386-elf-ld x86_64-linux-gnu-ld ld.lld ld])
+if test -n "$CROSS_PREFIX"; then
+  AC_PATH_PROG([AS_LD], [${CROSS_PREFIX}ld])
+  if test -z "$AS_LD"; then
+    AC_MSG_ERROR([${CROSS_PREFIX}ld not found, CROSS_PREFIX is wrong])
+  fi
+else
+  AC_PATH_PROGS([AS_LD], [i686-linux-gnu-ld i386-elf-ld x86_64-linux-gnu-ld ld.lld ld])
+fi
 if test -z "$AS_LD"; then
   AS_LD="$LD"
 fi
@@ -138,7 +152,14 @@ if test -z "$OBJCOPY"; then
   OBJCOPY="$LOBJCOPY"
 fi
 
-AC_PATH_PROGS([XOBJCOPY], [i686-linux-gnu-objcopy x86_64-linux-gnu-objcopy objcopy])
+if test -n "$CROSS_PREFIX"; then
+  AC_PATH_PROG([XOBJCOPY], [${CROSS_PREFIX}objcopy])
+  if test -z "$XOBJCOPY"; then
+    AC_MSG_ERROR([${CROSS_PREFIX}objcopy not found, CROSS_PREFIX is wrong])
+  fi
+else
+  AC_PATH_PROGS([XOBJCOPY], [i686-linux-gnu-objcopy x86_64-linux-gnu-objcopy objcopy])
+fi
 if test -z "$XOBJCOPY"; then
   XOBJCOPY="$OBJCOPY"
 fi
