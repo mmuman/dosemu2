@@ -91,7 +91,7 @@ modules:
   - name: dj64dev
     buildsystem: simple
     build-commands:
-      - make PREFIX=${FLATPAK_DEST}
+      - make PREFIX=${FLATPAK_DEST} CROSS_PREFIX=i686-unknown-linux-gnu-
       - make install PREFIX=${FLATPAK_DEST}
     sources:
       - type: git
