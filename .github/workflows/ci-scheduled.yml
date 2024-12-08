@@ -57,6 +57,7 @@ jobs:
       id: test
       env:
         RUNTYPE: packaged
+        OS: ${{ matrix.os }}
       run: ./ci_test.sh
 
     - name: Upload failure logs
