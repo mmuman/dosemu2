@@ -231,13 +231,6 @@ static void *alloc_mapping_file(int cap, size_t mapsize, void *target)
   target = mmap(target, mapsize, prot, MAP_SHARED | fixed, fd, 0);
   if (target == MAP_FAILED)
     return MAP_FAILED;
-#if HAVE_DECL_MADV_POPULATE_WRITE
-  {
-    int err = madvise(target, mapsize, MADV_POPULATE_WRITE);
-    if (err)
-      perror("madvise()");
-  }
-#endif
   p->addr = target;
   p->size = mapsize;
   p->fsize = mapsize;
