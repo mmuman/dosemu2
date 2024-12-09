@@ -314,6 +314,7 @@ static void abort_signal(int sig, siginfo_t *si, void *uc)
   _exit(sig);
 }
 
+#if defined(__i386__) || defined(__x86_64__)
 static int do_fault(sigcontext_t *scp)
 {
 #ifdef __i386__
@@ -328,9 +329,11 @@ static int do_fault(sigcontext_t *scp)
 #endif
   return 0;
 }
+#endif
 
 void handle_fault(int sig, const siginfo_t *si, sigcontext_t *scp)
 {
+#if defined(__i386__) || defined(__x86_64__)
   int unhand = 0;
 #ifdef __FreeBSD__
   /* freebsd fiddles with trapno */
@@ -348,6 +351,7 @@ void handle_fault(int sig, const siginfo_t *si, sigcontext_t *scp)
   }
   if (!unhand && do_fault(scp))
     return;
+#endif
   signal(sig, SIG_DFL);
   siginfo_debug(si);
   leavedos_from_sig(sig);
