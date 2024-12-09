@@ -3,6 +3,7 @@ name: Scheduled
 on:
   schedule:
     - cron: '23 23 * * 0' # 23:23 Every Sunday
+  workflow_dispatch:
 
 jobs:
   asan:
