@@ -1760,8 +1760,8 @@ int vga_emu_pre_init(void)
       memcheck_addtype('e', "VGAEMU LFB");
       register_hardware_ram_virtual2('e', VGAEMU_PHYS_LFB_BASE, vga.mem.size,
 				     vga.mem.base, vga.mem.lfb_base);
-      if (!alias_mapping_pa(MAPPING_VGAEMU, VGAEMU_PHYS_LFB_BASE,
-			    vga.mem.size, VGA_EMU_RW_PROT, vga.mem.base))
+      if (alias_mapping_pa(MAPPING_VGAEMU, VGAEMU_PHYS_LFB_BASE,
+			    vga.mem.size, VGA_EMU_RW_PROT, vga.mem.base) == -1)
 	addr = NULL;
     }
     if (addr && config.cpu_vm_dpmi == CPUVM_KVM)

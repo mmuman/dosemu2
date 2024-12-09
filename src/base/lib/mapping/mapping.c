@@ -1073,17 +1073,17 @@ int alias_mapping_pa(int cap, unsigned addr, size_t mapsize, int protect,
   struct hardware_ram *hw;
   dosaddr_t va = do_get_hardware_ram(addr, mapsize, &hw);
   if (va == (dosaddr_t)-1)
-    return 0;
+    return -1;
   assert(addr >= LOWMEM_SIZE + HMASIZE);
   addr2 = mappingdriver->alias(cap, MEM_BASE32(va), mapsize, protect, source);
   if (addr2 == MAP_FAILED)
-    return 0;
+    return -1;
   assert(addr2 == MEM_BASE32(va));
   hwram_update_aliasmap(hw, addr, mapsize, source);
   invalidate_unprotected_page_cache(va, mapsize);
   if (is_kvm_map(cap))
     mprotect_kvm(cap, va, mapsize, protect);
-  return 1;
+  return 0;
 }
 
 int unalias_mapping_pa(int cap, unsigned addr, size_t mapsize)
