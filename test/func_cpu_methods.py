@@ -1,5 +1,6 @@
 from os import uname, environ, access, R_OK, W_OK
 from shutil import copy
+from difflib import unified_diff
 
 
 def _dotest(self, cpu_vm, cpu_vm_dpmi):
