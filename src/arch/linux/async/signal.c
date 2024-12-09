@@ -339,10 +339,10 @@ void handle_fault(int sig, const siginfo_t *si, sigcontext_t *scp)
 #endif
   if (_scp_trapno == 0xe) {
     if (_scp_err & 0x10) {  // i-fetch fault
-      error("Bad exec address 0x%"PRI_RG"\n", _scp_cr2);
+      error("Bad exec address %p\n", si->si_addr);
       unhand++;
-    } else if (!mapping_is_mapped(LINP(_scp_cr2))) {
-      error("Bad fault address 0x%"PRI_RG"\n", _scp_cr2);
+    } else if (!mapping_is_mapped(si->si_addr)) {
+      error("Bad fault address %p\n", si->si_addr);
       unhand++;
     }
   }
