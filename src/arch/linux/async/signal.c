@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <termios.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -7,13 +6,10 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <pthread.h>
-#include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/mman.h>
 #include <assert.h>
 #ifdef __linux__
 #include <sys/prctl.h>
-#include <linux/version.h>
 #endif
 #ifdef __FreeBSD__
 #include <machine/trap.h>
@@ -23,28 +19,20 @@
 #ifdef __linux__
 #include "sys_vm86.h"
 #endif
-#include "bios.h"
-#include "mouse.h"
 #include "video.h"
 #include "vgaemu.h"
-#include "vgatext.h"
 #include "render.h"
-#include "timers.h"
+#include "mapping.h"
 #include "int.h"
 #include "lowmem.h"
 #include "coopth.h"
 #include "emudpmi.h"
-#include "pic.h"
-#include "ipx.h"
-#include "pktdrvr.h"
 #include "iodev.h"
-#include "serial.h"
 #include "debug.h"
 #include "mhpdbg.h"
 #include "utilities.h"
 #include "ringbuf.h"
 #include "dosemu_config.h"
-#include "sound.h"
 #include "cpu-emu.h"
 #include "sig.h"
 
@@ -326,25 +314,40 @@ static void abort_signal(int sig, siginfo_t *si, void *uc)
   _exit(sig);
 }
 
-void handle_fault(int sig, const siginfo_t *si, sigcontext_t *scp)
+static int do_fault(sigcontext_t *scp)
 {
-#ifdef HOST_ARCH_X86
 #ifdef __i386__
   if (in_vm86 && config.cpu_vm == CPUVM_VM86) {
     true_vm86_fault(scp);
-    return;
+    return 1;
   }
 #endif
+#ifdef X86_EMULATOR
+  if (IS_EMU_JIT() && e_emu_fault(scp, in_vm86))
+    return 1;
+#endif
+  return 0;
+}
+
+void handle_fault(int sig, const siginfo_t *si, sigcontext_t *scp)
+{
+  int unhand = 0;
 #ifdef __FreeBSD__
   /* freebsd fiddles with trapno */
   if (_scp_trapno == T_PAGEFLT)
     _scp_trapno = 0xe;
 #endif
-#ifdef X86_EMULATOR
-  if (IS_EMU_JIT() && e_emu_fault(scp, in_vm86))
+  if (_scp_trapno == 0xe) {
+    if (_scp_err & 0x10) {  // i-fetch fault
+      error("Bad exec address 0x%"PRI_RG"\n", _scp_cr2);
+      unhand++;
+    } else if (!mapping_is_mapped(LINP(_scp_cr2))) {
+      error("Bad fault address 0x%"PRI_RG"\n", _scp_cr2);
+      unhand++;
+    }
+  }
+  if (!unhand && do_fault(scp))
     return;
-#endif
-#endif
   signal(sig, SIG_DFL);
   siginfo_debug(si);
   leavedos_from_sig(sig);

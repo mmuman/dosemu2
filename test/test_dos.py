@@ -6,7 +6,6 @@ import unittest
 import re
 
 from datetime import datetime
-from difflib import unified_diff
 from os import statvfs, utime, environ
 from os.path import exists, isdir, join
 from pathlib import Path
