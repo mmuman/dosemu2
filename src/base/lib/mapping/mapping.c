@@ -1069,16 +1069,15 @@ int muncommit(void *ptr, size_t size)
 int alias_mapping_pa(int cap, unsigned addr, size_t mapsize, int protect,
        void *source)
 {
-  void *addr2;
   struct hardware_ram *hw;
+  int err;
   dosaddr_t va = do_get_hardware_ram(addr, mapsize, &hw);
   if (va == (dosaddr_t)-1)
     return -1;
   assert(addr >= LOWMEM_SIZE + HMASIZE);
-  addr2 = mappingdriver->alias(cap, MEM_BASE32(va), mapsize, protect, source);
-  if (addr2 == MAP_FAILED)
-    return -1;
-  assert(addr2 == MEM_BASE32(va));
+  err = alias_mapping(cap, va, mapsize, protect, source);
+  if (err)
+    return err;
   hwram_update_aliasmap(hw, addr, mapsize, source);
   invalidate_unprotected_page_cache(va, mapsize);
   if (is_kvm_map(cap))
