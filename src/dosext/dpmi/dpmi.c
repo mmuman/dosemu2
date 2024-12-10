@@ -567,8 +567,8 @@ int dpmi_is_valid_range(dosaddr_t addr, int len)
     return 0;
   if (blk->base + blk->size < addr + len)
     return 0;
-  for (i = (addr - blk->base) >> PAGE_SHIFT;
-       i < (PAGE_ALIGN(addr + len - 1) - blk->base) >> PAGE_SHIFT; i++)
+  for (i = (addr - blk->base) / HOST_PAGE_SIZE;
+       i < (HOST_PAGE_ALIGN(addr + len - 1) - blk->base) / HOST_PAGE_SIZE; i++)
     if ((blk->attrs[i] & 1) != 1)
       return 0;
   return 1;
@@ -577,13 +577,13 @@ int dpmi_is_valid_range(dosaddr_t addr, int len)
 int dpmi_read_access(dosaddr_t addr)
 {
   dpmi_pm_block *blk = lookup_pm_blocks_by_addr(addr);
-  return blk && (blk->attrs[(addr - blk->base) >> PAGE_SHIFT] & 1);
+  return blk && (blk->attrs[(addr - blk->base) / HOST_PAGE_SIZE] & 1);
 }
 
 int dpmi_write_access(dosaddr_t addr)
 {
   dpmi_pm_block *blk = lookup_pm_blocks_by_addr(addr);
-  return blk && (blk->attrs[(addr - blk->base) >> PAGE_SHIFT] & 9) == 9;
+  return blk && (blk->attrs[(addr - blk->base) / HOST_PAGE_SIZE] & 9) == 9;
 }
 
 /* client_esp return the proper value of client\'s esp, if scp != 0, */
@@ -3104,7 +3104,7 @@ err:
     break;
   case 0x0604:	/* Get Page Size */
     _LWORD(ebx) = 0;
-    _LWORD(ecx) = DPMI_page_size;
+    _LWORD(ecx) = HOST_PAGE_SIZE;  // not always 4K
     break;
   case 0x0701:	/* Reserved, DISCARD PAGES, see interrupt lst */
     D_printf("DPMI: undoc. func. 0x0701 called\n");

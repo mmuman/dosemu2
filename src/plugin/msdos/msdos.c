@@ -130,7 +130,7 @@ static unsigned short get_xbuf_seg(cpuctx_t *scp, int off, void *arg);
 static void rsp_init(void);
 static unsigned short msdos_get_lowmem_size(void);
 static void msdos_init(int num, int is_32, unsigned short mseg,
-	unsigned short psp, int inherit_idt);
+	unsigned short psp, int inherit_idt, uint32_t ps);
 static void msdos_done(int prev);
 static void msdos_set_client(int num);
 
@@ -285,7 +285,7 @@ static void setup_int_exc(int inherit_idt)
 }
 
 static void msdos_init(int num, int is_32, unsigned short mseg,
-	unsigned short psp, int inherit_idt)
+	unsigned short psp, int inherit_idt, uint32_t ps)
 {
     int first = (msdos_client_num < 0 ||
 	msdos_client_num >= DPMI_MAX_CLIENTS ||
@@ -305,7 +305,7 @@ static void msdos_init(int num, int is_32, unsigned short mseg,
 	SetSegmentBaseAddress(rmcb_sel, rmcb_mem);
 	SetSegmentLimit(rmcb_sel, len - 1);
 
-	MSDOS_CLIENT.ldt_alias = msdos_ldt_init();
+	MSDOS_CLIENT.ldt_alias = msdos_ldt_init(ps);
 	instrdec_init();
     } else {
 	MSDOS_CLIENT.ldt_alias = msdos_client[msdos_client_num - 1].ldt_alias;
@@ -388,7 +388,9 @@ static void do_common_start(cpuctx_t *scp, int is_32)
 {
     switch (_LWORD(eax)) {
     case 0:
-	msdos_init(_LWORD(ebx), is_32, _LWORD(edx), _LWORD(esi), _LWORD(ecx));
+//	err = _dpmi_get_page_size(scp, is_32, &ps);
+	msdos_init(_LWORD(ebx), is_32, _LWORD(edx), _LWORD(esi), _LWORD(ecx),
+		HOST_PAGE_SIZE);
 	break;
     case 1:
 	msdos_done(_LWORD(ecx));
