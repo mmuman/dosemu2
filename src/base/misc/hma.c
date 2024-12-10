@@ -35,7 +35,7 @@ static void HMA_MAP(int HMA)
   off_t src = HMA ? HMAAREA : 0;
   x_printf("Entering HMA_MAP with HMA=%d\n", HMA);
   ret = alias_mapping(MAPPING_HMA, HMAAREA, HMASIZE,
-    PROT_READ | PROT_WRITE | PROT_EXEC, LOWMEM(src));
+    PROT_RWX, LOWMEM(src));
   if (ret == -1) {
     x_printf("HMA: Mapping HMA to HMAAREA %#x unsuccessful: %s\n",
 	       HMAAREA, strerror(errno));
@@ -67,7 +67,7 @@ void HMA_init(void)
 {
   /* initially, no HMA */
   int ret = alias_mapping(MAPPING_HMA, HMAAREA, HMASIZE,
-    PROT_READ | PROT_WRITE | PROT_EXEC, LOWMEM(0));
+    PROT_RWX, LOWMEM(0));
   if (ret == -1) {
     error("HMA: Mapping HMA to HMAAREA %#x unsuccessful: %s\n",
 	       HMAAREA, strerror(errno));

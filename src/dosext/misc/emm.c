@@ -441,7 +441,7 @@ static void _do_map_page(unsigned int dst, caddr_t src, int size)
   e_invalidate_full(dst, size);
   E_printf("EMS: mmap()ing from %p to %#x\n", src, dst);
   if (-1 == alias_mapping(MAPPING_EMS, dst, size,
-				  PROT_READ | PROT_WRITE | PROT_EXEC,
+				  PROT_RWX,
 				  src)) {
     E_printf("EMS: mmap() failed: %s\n",strerror(errno));
     leavedos(2);
@@ -455,7 +455,7 @@ static void _do_unmap_page(unsigned int base, int size)
   E_printf("EMS: unmmap()ing from %#x\n", base);
   /* don't unmap, just overmap with the LOWMEM page */
   alias_mapping(MAPPING_LOWMEM, base, size,
-	PROT_READ | PROT_WRITE | PROT_EXEC, LOWMEM(base));
+	PROT_RWX, LOWMEM(base));
 }
 
 static int

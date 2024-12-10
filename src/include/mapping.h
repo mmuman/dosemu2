@@ -28,6 +28,28 @@
 #define HUGE_PAGE_MASK	(~(HUGE_PAGE_SIZE-1))
 #define HUGE_PAGE_ALIGN(addr)	(((addr)+HUGE_PAGE_SIZE-1)&HUGE_PAGE_MASK)
 
+#if defined(__i386__) || defined(DNATIVE)
+#define _PROT_EXEC PROT_EXEC
+#else
+#define _PROT_EXEC 0
+#endif
+
+#if defined(DNATIVE)
+#define DPMI_PROT_EXEC PROT_EXEC
+#else
+#define DPMI_PROT_EXEC 0
+#endif
+
+#if defined(__i386__) || defined(__x86_64__)
+#define KVM_PROT_EXEC PROT_EXEC
+#else
+#define KVM_PROT_EXEC 0
+#endif
+
+#define PROT_RWX (PROT_READ | PROT_WRITE | _PROT_EXEC)
+#define DPMI_PROT_RWX (PROT_READ | PROT_WRITE | DPMI_PROT_EXEC)
+#define KVM_PROT_RWX (PROT_READ | PROT_WRITE | KVM_PROT_EXEC)
+
 #define Q__printf(f,cap,a...) ({\
   Q_printf(f,decode_mapping_cap(cap),##a); \
 })

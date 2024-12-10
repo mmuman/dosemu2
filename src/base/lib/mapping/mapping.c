@@ -306,7 +306,7 @@ int alias_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect, void *so
     if (target == MAP_FAILED)
       continue;
     /* protections on KVM_BASE go via page tables in the VM, not mprotect */
-    prot = i == KVM_BASE ? (PROT_READ|PROT_WRITE|PROT_EXEC) : protect;
+    prot = i == KVM_BASE ? PROT_RWX : protect;
     addr = mappingdriver->alias(cap, target, mapsize, prot, source);
     if (addr == MAP_FAILED)
       return -1;
@@ -406,7 +406,7 @@ void *mmap_mapping_huge_page_aligned(int cap, size_t mapsize, int protect)
     mem_bases[MEM_BASE].size = mapsize;
     if (is_kvm_map(cap)) {
       mapsize = LOWMEM_SIZE + HMASIZE;
-      protect = PROT_READ|PROT_WRITE|PROT_EXEC;
+      protect = PROT_RWX;
       void *kvm_base = do_huge_page(0, mapsize, protect);
       if (kvm_base == MAP_FAILED)
 	return kvm_base;
@@ -843,7 +843,7 @@ void register_hardware_ram_virtual2(int type, unsigned base, unsigned int size,
   do_register_hwram(type, base, size, uaddr2, va);
   if (config.cpu_vm_dpmi == CPUVM_KVM ||
       (config.cpu_vm == CPUVM_KVM && base + size <= LOWMEM_SIZE + HMASIZE)) {
-    int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
+    int prot = KVM_PROT_RWX;
     int cap = MAPPING_INIT_LOWRAM;
     if (type == 'L')
       cap |= MAPPING_LOWMEM;

@@ -409,7 +409,7 @@ static void init_kvm_monitor(void)
 	offsetof(struct monitor, kvm_tss),
 	monitor, MONITOR_DOSADDR, PROT_READ | PROT_WRITE);
   mprotect_kvm(MAPPING_KVM, sregs.tr.base + offsetof(struct monitor, code),
-	       sizeof(monitor->code), PROT_READ | PROT_EXEC);
+	       sizeof(monitor->code), PROT_READ | KVM_PROT_EXEC);
 
   sregs.cr0 |= X86_CR0_PE | X86_CR0_PG | X86_CR0_NE | X86_CR0_ET;
   sregs.cr4 |= X86_CR4_VME;

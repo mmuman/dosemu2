@@ -150,11 +150,7 @@ static int commit(void *ptr, size_t size)
   int err;
 #endif
   if (mprotect_mapping(MAPPING_DPMI, DOSADDR_REL(ptr), size,
-	PROT_READ | PROT_WRITE
-#ifdef DNATIVE
-	| PROT_EXEC
-#endif
-	) == -1)
+	PROT_READ | PROT_WRITE | DPMI_PROT_EXEC) == -1)
     return 0;
 #if HAVE_DECL_MADV_POPULATE_WRITE
   err = madvise(ptr, size, MADV_POPULATE_WRITE);
@@ -280,7 +276,7 @@ static int SetAttribsForPage(unsigned int ptr, uint16_t attr, uint16_t *old_attr
         break;
     }
     com &= 1;
-    prot = PROT_READ | PROT_EXEC;
+    prot = PROT_READ | DPMI_PROT_EXEC;
     D_printf("RW(%i)", !!(old_attr & 8));
     if (attr & 8) {
       if (!(old_attr & 8)) {
@@ -468,7 +464,7 @@ dpmi_pm_block * DPMI_mallocLinear(dpmi_pm_block_root *root,
     }
     block->base = DOSADDR_REL(realbase);
     mprotect_mapping(MAPPING_DPMI, block->base, size, committed ?
-		PROT_READ | PROT_WRITE | PROT_EXEC : PROT_NONE);
+		DPMI_PROT_RWX : PROT_NONE);
     block->linear = 1;
     for (i = 0; i < size >> PAGE_SHIFT; i++)
 	block->attrs[i] = committed ? 9 : 8;
@@ -653,7 +649,7 @@ dpmi_pm_block *DPMI_mallocShared(dpmi_pm_block_root *root,
         goto err2;
     }
     if (!(flags & SHM_NOEXEC))
-        prot |= PROT_EXEC;
+        prot |= DPMI_PROT_EXEC;
     targ = DOSADDR_REL(addr);
     register_hardware_ram_virtual('S', targ, size, targ);
     addr2 = mmap_shm_mapping(targ, size, prot, fd);
@@ -739,7 +735,7 @@ static dpmi_pm_block *DPMI_mallocSharedNS_common(dpmi_pm_block_root *root,
         goto err2;
     }
     if (!(flags & SHM_NOEXEC))
-        prot |= PROT_EXEC;
+        prot |= DPMI_PROT_EXEC;
     targ = DOSADDR_REL(addr);
     register_hardware_ram_virtual('S', targ, size, targ);
     addr2 = mmap_shm_mapping(targ, size, prot, fd);
@@ -996,7 +992,7 @@ dpmi_pm_block * DPMI_realloc(dpmi_pm_block_root *root,
     /* realloc needs full access to the old block */
     e_invalidate_full(block->base, block->size);
     mprotect_mapping(MAPPING_DPMI, block->base, block->size,
-        PROT_READ | PROT_WRITE | PROT_EXEC);
+        DPMI_PROT_RWX);
     if (!(ptr = smrealloc(&mem_pool, MEM_BASE32(block->base), newsize)))
 	return NULL;
 
@@ -1039,7 +1035,7 @@ dpmi_pm_block * DPMI_reallocLinear(dpmi_pm_block_root *root,
     */
     e_invalidate_full(block->base, block->size);
     mprotect_mapping(MAPPING_DPMI, block->base, block->size,
-      PROT_READ | PROT_WRITE | PROT_EXEC);
+      DPMI_PROT_RWX);
     ptr = smrealloc(&main_pool, MEM_BASE32(block->base), newsize);
     if (ptr == NULL) {
 	restore_page_protection(block);
@@ -1051,7 +1047,7 @@ dpmi_pm_block * DPMI_reallocLinear(dpmi_pm_block_root *root,
     block->size = newsize;
     /* restore_page_protection() will set proper prots */
     mprotect_mapping(MAPPING_DPMI, block->base, block->size,
-		PROT_READ | PROT_WRITE | PROT_EXEC);
+		DPMI_PROT_RWX);
     restore_page_protection(block);
     return block;
 }
@@ -1085,7 +1081,7 @@ int DPMI_MapConventionalMemory(dpmi_pm_block_root *root,
 
     e_invalidate_full(block->base + offset, cnt*PAGE_SIZE);
     if (alias_mapping(MAPPING_LOWMEM, block->base + offset, cnt*PAGE_SIZE,
-       PROT_READ | PROT_WRITE | PROT_EXEC, LOWMEM(low_addr)) == -1) {
+       DPMI_PROT_RWX, LOWMEM(low_addr)) == -1) {
 
 	D_printf("DPMI MapConventionalMemory mmap failed, errno = %d\n",errno);
 	return -1;

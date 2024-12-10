@@ -317,7 +317,7 @@ int e_mprotect(unsigned int addr, size_t len)
 	    }
 	    if ((a == aend || qp) && abeg1 != (unsigned)-1) {
 		e = mprotect_mapping(MAPPING_CPUEMU, abeg1, aend1-abeg1+PAGE_SIZE,
-			    PROT_READ|PROT_EXEC);
+			    PROT_READ | _PROT_EXEC);
 		if (e<0) {
 		    e_printf("MPMAP: %s\n",strerror(errno));
 		    return -1;
@@ -354,7 +354,7 @@ static int e_munprotect(unsigned int addr, size_t len)
 	    }
 	    if ((a == aend || !qp) && abeg1 != (unsigned)-1) {
 		e = mprotect_mapping(MAPPING_CPUEMU, abeg1, aend1-abeg1+PAGE_SIZE,
-			     PROT_READ|PROT_WRITE|PROT_EXEC);
+			     PROT_RWX);
 		if (e<0) {
 		    e_printf("MPUNMAP: %s\n",strerror(errno));
 		    return -1;
@@ -509,7 +509,7 @@ void mprot_end(void)
 		    if (b & 1) {
 			if (debug_level('e')>1)
 			    dbug_printf("MP_END %08x = RWX\n",addr);
-			mprotect_mapping(MAPPING_CPUEMU, addr, PAGE_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC);
+			mprotect_mapping(MAPPING_CPUEMU, addr, PAGE_SIZE, PROT_RWX);
 		    }
 		    addr += PAGE_SIZE;
 	 	    b >>= 1;
