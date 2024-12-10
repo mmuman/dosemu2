@@ -1039,29 +1039,15 @@ void *mapping_find_hole(unsigned long start, unsigned long stop,
     return (void *)pend;
 }
 
-int mcommit(void *ptr, size_t size)
+int mcommit_mapping(dosaddr_t targ, size_t size)
 {
-  int err;
-  dosaddr_t targ = DOSADDR_REL(ptr);
-  int cap = MAPPING_INIT_LOWRAM;
-  err = mprotect_mapping(cap, targ, size, PROT_READ | PROT_WRITE);
-  if (err == -1)
-    return 0;
+  int err = 0;
 #if HAVE_DECL_MADV_POPULATE_WRITE
   err = madvise_mapping(targ, size, MADV_POPULATE_WRITE);
   if (err)
     perror("madvise()");
 #endif
-  return 1;
-}
-
-int muncommit(void *ptr, size_t size)
-{
-  dosaddr_t targ = DOSADDR_REL(ptr);
-  int cap = MAPPING_INIT_LOWRAM;
-  if (mprotect_mapping(cap, targ, size, PROT_NONE) == -1)
-    return 0;
-  return 1;
+  return err;
 }
 
 int alias_mapping_pa(int cap, unsigned addr, size_t mapsize, int protect,

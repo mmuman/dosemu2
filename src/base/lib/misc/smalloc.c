@@ -291,7 +291,8 @@ static struct memnode *sm_alloc_fixed(struct mempool *mp, void *ptr,
   mn->used = 1;
   mntruncate(mn, size);
   assert(mn->size == size);
-  memset(mn->mem_area, 0, size);
+  if (!(mp->flags & SMFLG_NOMEMSET))
+    memset(mn->mem_area, 0, size);
   return mn;
 }
 
@@ -326,7 +327,8 @@ static struct memnode *sm_alloc_aligned(struct mempool *mp, size_t align,
   mn->used = 1;
   mntruncate(mn, size);
   assert(mn->size == size);
-  memset(mn->mem_area, 0, size);
+  if (!(mp->flags & SMFLG_NOMEMSET))
+    memset(mn->mem_area, 0, size);
   return mn;
 }
 
@@ -376,7 +378,8 @@ static struct memnode *sm_alloc_aligned_topdown(struct mempool *mp,
   mn->used = 1;
   mntruncate(mn, size);
   assert(mn->size == size);
-  memset(mn->mem_area, 0, size);
+  if (!(mp->flags & SMFLG_NOMEMSET))
+    memset(mn->mem_area, 0, size);
   return mn;
 }
 
@@ -479,7 +482,8 @@ static struct memnode *sm_realloc_alloc_mn(struct mempool *mp,
     }
     pmn->used = 1;
     memmove(pmn->mem_area, mn->mem_area, mn->size);
-    memset(pmn->mem_area + mn->size, 0, size - mn->size);
+    if (!(mp->flags & SMFLG_NOMEMSET))
+      memset(pmn->mem_area + mn->size, 0, size - mn->size);
     mn->used = 0;
     if (size < pmn->size + mn->size) {
       size_t overl = size > pmn->size ? size - pmn->size : 0;
@@ -533,7 +537,8 @@ void *smrealloc(struct mempool *mp, void *ptr, size_t size)
       /* expand by shrinking next memnode */
       if (!sm_commit_simple(mp, nmn->mem_area, size - mn->size))
         return NULL;
-      memset(nmn->mem_area, 0, size - mn->size);
+      if (!(mp->flags & SMFLG_NOMEMSET))
+        memset(nmn->mem_area, 0, size - mn->size);
       mntruncate(mn, size);
     } else {
       /* need to allocate new memnode */
@@ -581,7 +586,8 @@ void *smrealloc_aligned(struct mempool *mp, void *ptr, int align, size_t size)
       /* expand by shrinking next memnode */
       if (!sm_commit_simple(mp, nmn->mem_area, size - mn->size))
         return NULL;
-      memset(nmn->mem_area, 0, size - mn->size);
+      if (!(mp->flags & SMFLG_NOMEMSET))
+        memset(nmn->mem_area, 0, size - mn->size);
       mntruncate(mn, size);
     } else {
       /* lazy impl */
@@ -596,7 +602,7 @@ void *smrealloc_aligned(struct mempool *mp, void *ptr, int align, size_t size)
   return mn->mem_area;
 }
 
-int sminit(struct mempool *mp, void *start, size_t size)
+static int do_sminit(struct mempool *mp, void *start, size_t size, int flags)
 {
   mp->size = size;
   mp->mn.size = size;
@@ -604,17 +610,29 @@ int sminit(struct mempool *mp, void *start, size_t size)
   mp->mn.next = NULL;
   mp->mn.mem_area = (unsigned char *)start;
   mp->avail = size;
+  mp->flags = flags;
   mp->commit = NULL;
   mp->uncommit = NULL;
   mp->smerr = smerr;
   return 0;
 }
 
+int sminit(struct mempool *mp, void *start, size_t size)
+{
+  return do_sminit(mp, start, size, 0);
+}
+
+int sminit_f(struct mempool *mp, void *start, size_t size, int flags)
+{
+  return do_sminit(mp, start, size, flags);
+}
+
 static int do_sminit_com(struct mempool *mp, void *start, size_t size,
     int (*commit)(void *area, size_t size),
-    int (*uncommit)(void *area, size_t size), int do_uncommit)
+    int (*uncommit)(void *area, size_t size), int do_uncommit,
+    int flags)
 {
-  sminit(mp, start, size);
+  do_sminit(mp, start, size, flags);
   mp->commit = commit;
   mp->uncommit = uncommit;
   if (uncommit && do_uncommit)
@@ -624,16 +642,18 @@ static int do_sminit_com(struct mempool *mp, void *start, size_t size,
 
 int sminit_com(struct mempool *mp, void *start, size_t size,
     int (*commit)(void *area, size_t size),
-    int (*uncommit)(void *area, size_t size))
+    int (*uncommit)(void *area, size_t size),
+    int flags)
 {
-  return do_sminit_com(mp, start, size, commit, uncommit, 1);
+  return do_sminit_com(mp, start, size, commit, uncommit, 1, flags);
 }
 
 int sminit_comu(struct mempool *mp, void *start, size_t size,
     int (*commit)(void *area, size_t size),
-    int (*uncommit)(void *area, size_t size))
+    int (*uncommit)(void *area, size_t size),
+    int flags)
 {
-  return do_sminit_com(mp, start, size, commit, uncommit, 0);
+  return do_sminit_com(mp, start, size, commit, uncommit, 0, flags);
 }
 
 void smfree_all(struct mempool *mp)

@@ -146,17 +146,11 @@ dpmi_pm_block *lookup_pm_block_by_shmname(dpmi_pm_block_root *root,
 
 static int commit(void *ptr, size_t size)
 {
-#if HAVE_DECL_MADV_POPULATE_WRITE
-  int err;
-#endif
-  if (mprotect_mapping(MAPPING_DPMI, DOSADDR_REL(ptr), size,
+  dosaddr_t targ = DOSADDR_REL(ptr);
+  if (mprotect_mapping(MAPPING_DPMI, targ, size,
 	PROT_READ | PROT_WRITE | DPMI_PROT_EXEC) == -1)
     return 0;
-#if HAVE_DECL_MADV_POPULATE_WRITE
-  err = madvise(ptr, size, MADV_POPULATE_WRITE);
-  if (err)
-    perror("madvise()");
-#endif
+  mcommit_mapping(targ, size);
   return 1;
 }
 
@@ -218,7 +212,7 @@ int dpmi_alloc_pool(void)
     dpmi_base = MEM_BASE32(config.dpmi_base);
     c_printf("DPMI: mem init, mpool is %d bytes at %p\n", memsize, dpmi_base);
     /* Create DPMI pool */
-    sminit_com(&mem_pool, dpmi_base, memsize, commit, uncommit);
+    sminit_com(&mem_pool, dpmi_base, memsize, commit, uncommit, 0);
     dpmi_total_memory = config.dpmi * 1024;
 
     D_printf("DPMI: dpmi_free_memory available 0x%x\n", dpmi_total_memory);

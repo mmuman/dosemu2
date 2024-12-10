@@ -105,6 +105,7 @@ int munmap_mapping(int cap, dosaddr_t targ, size_t mapsize);
 int mprotect_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect);
 int mprotect_vga(int idx, dosaddr_t targ, size_t mapsize, int protect);
 int restore_mapping(int cap, dosaddr_t targ, size_t mapsize);
+int mcommit_mapping(dosaddr_t targ, size_t size);
 /* below wrapper is needed only for remoting the mapping subsystem */
 void *mmap_shm_mapping(dosaddr_t targ, size_t length, int prot, int fd);
 int mapping_is_mapped(void *addr);
@@ -162,8 +163,5 @@ void *get_hardware_uaddr(unsigned addr);
 void list_hardware_ram(void (*print)(const char *, ...));
 void *mapping_find_hole(unsigned long start, unsigned long stop,
 	unsigned long size);
-
-int mcommit(void *ptr, size_t size);
-int muncommit(void *ptr, size_t size);
 
 #endif /* _MAPPING_H_ */

@@ -33,11 +33,14 @@ struct memnode {
 typedef struct mempool {
   size_t size;
   size_t avail;
+  int flags;
   struct memnode mn;
   int (*commit)(void *area, size_t size);
   int (*uncommit)(void *area, size_t size);
   void (*smerr)(int prio, const char *fmt, ...) FORMAT(printf, 2, 3);
 } smpool;
+
+#define SMFLG_NOMEMSET 1
 
 void *smalloc(struct mempool *mp, size_t size);
 void *smalloc_fixed(struct mempool *mp, void *ptr, size_t size);
@@ -49,12 +52,15 @@ void *smalloc_aligned_topdown(struct mempool *mp, unsigned char *top,
 void *smrealloc(struct mempool *mp, void *ptr, size_t size);
 void *smrealloc_aligned(struct mempool *mp, void *ptr, int align, size_t size);
 int sminit(struct mempool *mp, void *start, size_t size);
+int sminit_f(struct mempool *mp, void *start, size_t size, int flags);
 int sminit_com(struct mempool *mp, void *start, size_t size,
     int (*commit)(void *area, size_t size),
-    int (*uncommit)(void *area, size_t size));
+    int (*uncommit)(void *area, size_t size),
+    int flags);
 int sminit_comu(struct mempool *mp, void *start, size_t size,
     int (*commit)(void *area, size_t size),
-    int (*uncommit)(void *area, size_t size));
+    int (*uncommit)(void *area, size_t size),
+    int flags);
 void smfree_all(struct mempool *mp);
 int smdestroy(struct mempool *mp);
 size_t smget_free_space(struct mempool *mp);
