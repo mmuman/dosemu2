@@ -411,8 +411,9 @@ void map_memory_space(void)
   /* smalloc uses PROT_READ | PROT_WRITE, needs to add PROT_EXEC here */
   mprotect_mapping(MAPPING_LOWMEM, 0, LOWMEM_SIZE + HMASIZE, PROT_RWX);
 #endif
+#if 0
   mcommit_mapping(0, LOWMEM_SIZE + HMASIZE);
-
+#endif
   /* we have an uncommitted hole up to phys_low */
   ptr += phys_low;
   phys_rsv = phys_low - (LOWMEM_SIZE + HMASIZE);
