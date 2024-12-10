@@ -106,6 +106,7 @@ int mprotect_mapping(int cap, dosaddr_t targ, size_t mapsize, int protect);
 int mprotect_vga(int idx, dosaddr_t targ, size_t mapsize, int protect);
 int restore_mapping(int cap, dosaddr_t targ, size_t mapsize);
 int mcommit_mapping(dosaddr_t targ, size_t size);
+int mcommit(void *addr, size_t size);
 /* below wrapper is needed only for remoting the mapping subsystem */
 void *mmap_shm_mapping(dosaddr_t targ, size_t length, int prot, int fd);
 int mapping_is_mapped(void *addr);

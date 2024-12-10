@@ -150,7 +150,7 @@ static int commit(void *ptr, size_t size)
   if (mprotect_mapping(MAPPING_DPMI, targ, size,
 	PROT_READ | PROT_WRITE | DPMI_PROT_EXEC) == -1)
     return 0;
-  mcommit_mapping(targ, size);
+  mcommit(ptr, size);
   return 1;
 }
 

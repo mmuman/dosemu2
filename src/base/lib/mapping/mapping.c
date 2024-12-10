@@ -1050,6 +1050,17 @@ int mcommit_mapping(dosaddr_t targ, size_t size)
   return err;
 }
 
+int mcommit(void *addr, size_t size)
+{
+  int err = 0;
+#if HAVE_DECL_MADV_POPULATE_WRITE
+  err = madvise(addr, size, MADV_POPULATE_WRITE);
+  if (err)
+    perror("madvise()");
+#endif
+  return err;
+}
+
 int alias_mapping_pa(int cap, unsigned addr, size_t mapsize, int protect,
        void *source)
 {
