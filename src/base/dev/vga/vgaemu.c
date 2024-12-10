@@ -196,8 +196,8 @@
  * We add PROT_EXEC just because pages should be executable. Of course
  * Intel's x86 processors do not all support non-executable pages, but anyway...
  */
-#define VGA_EMU_RW_PROT		(PROT_READ | PROT_WRITE | PROT_EXEC)
-#define VGA_EMU_RO_PROT		(PROT_READ | PROT_EXEC)
+#define VGA_EMU_RW_PROT		(PROT_READ | PROT_WRITE | _PROT_EXEC)
+#define VGA_EMU_RO_PROT		(PROT_READ | _PROT_EXEC)
 #define VGA_EMU_NONE_PROT	0
 
 #define vga_msg(x...) v_printf("VGAEmu: " x)

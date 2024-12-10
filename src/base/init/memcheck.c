@@ -142,7 +142,7 @@ void memcheck_reserve(unsigned char map_char, dosaddr_t addr_start,
         map_char == 'H' || map_char == 'r'));
 
   if (memcheck_is_rom(addr_start))
-    mprotect_mapping(MAPPING_LOWMEM, addr_start, size, PROT_READ | PROT_EXEC);
+    mprotect_mapping(MAPPING_LOWMEM, addr_start, size, PROT_READ | _PROT_EXEC);
 }
 
 void memcheck_map_free(unsigned char map_char)

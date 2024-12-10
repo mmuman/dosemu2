@@ -392,7 +392,7 @@ void map_memory_space(void)
   }
   /* now populate mem_bases */
   result = alias_mapping(MAPPING_LOWMEM, 0, LOWMEM_SIZE + HMASIZE,
-			 PROT_READ | PROT_WRITE | PROT_EXEC, lowmem);
+			 PROT_RWX, lowmem);
   if (result == -1) {
     perror ("LOWRAM mmap");
     exit(EXIT_FAILURE);
@@ -407,9 +407,10 @@ void map_memory_space(void)
   sminit_comu(&main_pool, mem_base, memsize, mcommit, muncommit);
   ptr = smalloc(&main_pool, LOWMEM_SIZE + HMASIZE);
   assert(ptr == mem_base);
+#if defined(__i386__) || defined(DNATIVE)
   /* smalloc uses PROT_READ | PROT_WRITE, needs to add PROT_EXEC here */
-  mprotect_mapping(MAPPING_LOWMEM, 0, LOWMEM_SIZE + HMASIZE, PROT_READ | PROT_WRITE |
-      PROT_EXEC);
+  mprotect_mapping(MAPPING_LOWMEM, 0, LOWMEM_SIZE + HMASIZE, PROT_RWX);
+#endif
   /* we have an uncommitted hole up to phys_low */
   ptr += phys_low;
   phys_rsv = phys_low - (LOWMEM_SIZE + HMASIZE);
@@ -422,7 +423,7 @@ void map_memory_space(void)
     assert(dptr);
     if (config.cpu_vm_dpmi == CPUVM_KVM) {
       /* map dpmi+uncommitted space to kvm */
-      int prot = PROT_READ | PROT_WRITE | PROT_EXEC;
+      int prot = KVM_PROT_RWX;
       mmap_kvm(MAPPING_INIT_LOWRAM, phys_low, ptr2 - ptr, ptr, phys_low, prot);
     }
     /* unused hole for alignment */
@@ -443,7 +444,7 @@ void map_memory_space(void)
   if (config.dpmi && config.cpu_vm_dpmi == CPUVM_KVM)
     mmap_kvm(MAPPING_LOWMEM, DOSADDR_REL(ptr2), phys_rsv,
         MEM_BASE32(LOWMEM_SIZE + HMASIZE), LOWMEM_SIZE + HMASIZE,
-        PROT_READ | PROT_WRITE | PROT_EXEC);
+        KVM_PROT_RWX);
 
   /* R/O protect 0xf0000-0xf4000 */
   if (!config.umb_f0) {
