@@ -85,13 +85,7 @@ static void *alias_mapping_file(int cap, void *target, size_t mapsize, int prote
   addr = mmap_shm_hook(cap, target, mapsize, protect,
           MAP_SHARED | fixed, p->fd, offs);
   if (addr == MAP_FAILED) {
-    int errn = errno;
-    addr = mmap(target, mapsize, protect & ~PROT_EXEC, MAP_SHARED | fixed,
-		 p->fd, offs);
-    if (addr != MAP_FAILED && errn == EACCES)
-      error("/dev/shm mounted with noexec, exiting\n");
-    else
-      perror("mmap()");
+    perror("mmap()");
     exit(2);
   }
 #if 1
