@@ -407,9 +407,11 @@ void map_memory_space(void)
   sminit_comu(&main_pool, mem_base, memsize, mcommit, muncommit);
   ptr = smalloc(&main_pool, LOWMEM_SIZE + HMASIZE);
   assert(ptr == mem_base);
+#if defined(__i386__) || defined(DNATIVE)
   /* smalloc uses PROT_READ | PROT_WRITE, needs to add PROT_EXEC here */
   mprotect_mapping(MAPPING_LOWMEM, 0, LOWMEM_SIZE + HMASIZE, PROT_READ | PROT_WRITE |
       PROT_EXEC);
+#endif
   /* we have an uncommitted hole up to phys_low */
   ptr += phys_low;
   phys_rsv = phys_low - (LOWMEM_SIZE + HMASIZE);
