@@ -400,7 +400,7 @@ dpmi_pm_block * DPMI_malloc(dpmi_pm_block_root *root, unsigned int size)
     if ((block = alloc_pm_block(root, size)) == NULL)
 	return NULL;
 
-    if (!(realbase = smalloc(&mem_pool, size))) {
+    if (!(realbase = smalloc_aligned(&mem_pool, HOST_PAGE_SIZE, size))) {
 	free_pm_block(root, block);
 	return NULL;
     }
@@ -449,7 +449,7 @@ dpmi_pm_block * DPMI_mallocLinear(dpmi_pm_block_root *root,
     if (base == -1)
 	realbase = smalloc_aligned_topdown(&main_pool,
 		&dpmi_lin_rsv_base[dpmi_lin_mem_rsv()],
-		PAGE_SIZE, size);
+		HOST_PAGE_SIZE, size);
     else
 	realbase = smalloc_fixed(&main_pool, MEM_BASE32(base), size);
     if (realbase == NULL) {
@@ -637,7 +637,7 @@ dpmi_pm_block *DPMI_mallocShared(dpmi_pm_block_root *root,
     shlock_close(exlock);
     exlock = NULL;
 
-    addr = smalloc(&mem_pool, size);
+    addr = smalloc_aligned(&mem_pool, HOST_PAGE_SIZE, size);
     if (!addr) {
         error("unable to alloc %x for shm %s\n", size, name);
         goto err2;
@@ -723,7 +723,7 @@ static dpmi_pm_block *DPMI_mallocSharedNS_common(dpmi_pm_block_root *root,
         goto err2;
     }
 
-    addr = smalloc(&mem_pool, size);
+    addr = smalloc_aligned(&mem_pool, HOST_PAGE_SIZE, size);
     if (!addr) {
         error("unable to alloc %x for shm %s\n", size, name);
         goto err2;
