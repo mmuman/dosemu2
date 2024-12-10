@@ -2615,6 +2615,7 @@ int vgaemu_map_bank(void)
     return False;
   i = vga_emu_map(VGAEMU_MAP_BANK_MODE, first);
   e_invalidate_full(0xa0000, 0x20000);
+  dirty_all_video_pages();
 
   if(i) {
     vga_msg(
