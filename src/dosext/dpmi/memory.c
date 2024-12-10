@@ -150,7 +150,11 @@ static int commit(void *ptr, size_t size)
   int err;
 #endif
   if (mprotect_mapping(MAPPING_DPMI, DOSADDR_REL(ptr), size,
-	PROT_READ | PROT_WRITE | PROT_EXEC) == -1)
+	PROT_READ | PROT_WRITE
+#ifdef DNATIVE
+	| PROT_EXEC
+#endif
+	) == -1)
     return 0;
 #if HAVE_DECL_MADV_POPULATE_WRITE
   err = madvise(ptr, size, MADV_POPULATE_WRITE);
