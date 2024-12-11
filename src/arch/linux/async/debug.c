@@ -246,7 +246,11 @@ void siginfo_debug(const siginfo_t *si)
 
     gdb_debug();
 #ifdef HAVE_BACKTRACE
-    print_trace();
+#ifdef X86_EMULATOR
+    /* backtrace() crashes in jit code */
+    if (!IS_EMU_JIT() || !e_in_compiled_code())
+#endif
+      print_trace();
 #endif
     dump_state();
 }
