@@ -26,6 +26,9 @@
 #define DPMI_MAX_RMCBS		32
 
 #define DPMI_page_size		4096	/* 4096 bytes per page */
+#define HOST_PAGE_SIZE		sysconf(_SC_PAGESIZE)
+#define HOST_PAGE_MASK		(~(HOST_PAGE_SIZE-1))
+#define HOST_PAGE_ALIGN(addr)	(((addr)+HOST_PAGE_SIZE-1)&HOST_PAGE_MASK)
 
 #define DPMI_pm_stack_size	0xf000	/* locked protected mode stack for exceptions, */
 					/* hardware interrupts, software interrups 0x1c, */

@@ -1,7 +1,7 @@
 #ifndef MSDOS_LDT_H
 #define MSDOS_LDT_H
 
-unsigned short msdos_ldt_init(void);
+unsigned short msdos_ldt_init(int page_size);
 void msdos_ldt_done(void);
 int msdos_ldt_fault(cpuctx_t *scp, uint16_t sel);
 int _msdos_ldt_access(dosaddr_t cr2);

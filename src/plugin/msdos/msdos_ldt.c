@@ -21,6 +21,7 @@
  */
 
 #include <string.h>
+#include <alloca.h>
 #include <assert.h>
 #include "cpu.h"
 #include "utilities.h"
@@ -59,7 +60,7 @@ static void msdos_ldt_handler(cpuctx_t *scp, void *arg)
     msdos_ldt_update(_LWORD(ebx), _LWORD(ecx));
 }
 
-unsigned short msdos_ldt_init(void)
+unsigned short msdos_ldt_init(int page_size)
 {
     char tmpnm[] = "ldt_alias_%PXXXXXX";
     unsigned lim;
@@ -69,12 +70,14 @@ unsigned short msdos_ldt_init(void)
     unsigned short name_sel;
     unsigned short alias_sel;
     dosaddr_t name;
-    uint16_t attrs[PAGE_ALIGN(LDT_ENTRIES*LDT_ENTRY_SIZE) / PAGE_SIZE];
+    uint16_t *attrs;
     int err;
     int i;
-    int npages = PAGE_ALIGN(LDT_ENTRIES*LDT_ENTRY_SIZE) / PAGE_SIZE;
+    int npages;
     const int name_len = 128;
 
+    attrs = alloca(sizeof(*attrs) * PAGE_ALIGN(LDT_ENTRIES*LDT_ENTRY_SIZE) / page_size);
+    npages = PAGE_ALIGN(LDT_ENTRIES*LDT_ENTRY_SIZE) / page_size;
     name_sel = AllocateDescriptors(1);
     name = msdos_malloc(name_len);
     tempname(tmpnm, 6);
