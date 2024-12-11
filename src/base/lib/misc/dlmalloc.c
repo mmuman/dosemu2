@@ -363,7 +363,9 @@ extern void*     sbrk(ptrdiff_t);
 #define MAP_ANONYMOUS        MAP_ANON
 #endif /* MAP_ANON */
 #ifdef MAP_ANONYMOUS
-#define MMAP_FLAGS           (MAP_PRIVATE|MAP_ANONYMOUS)
+/* We use this only for JITted code. We need MAP_32BIT because the
+ * jumps are only possible in a range of +/-2Gb. */
+#define MMAP_FLAGS           (MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT)
 #define CALL_MMAP(s)         mmap(0, (s), MMAP_PROT, MMAP_FLAGS, -1, 0)
 #else /* MAP_ANONYMOUS */
 /*
