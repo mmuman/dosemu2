@@ -1536,41 +1536,6 @@ static int vgaemu_unmap(unsigned page)
 }
 #endif
 
-/*
- * Put the vga memory mapping into a defined state.
- */
-void vgaemu_reset_mapping(void)
-{
-  int i;
-  int prot, page, startpage, endpage;
-
-  prot = VGA_EMU_RW_PROT;
-  startpage = vga.mem.graph_base >> PAGE_SHIFT;
-  endpage = startpage + (vga.mem.graph_size >> PAGE_SHIFT);
-  for(page = startpage; page < endpage; page++) {
-    i = alias_mapping(MAPPING_VGAEMU,
-      page << 12, 1 << 12,
-      prot, LOWMEM(page << 12)
-    );
-    if (i == -1) {
-      error("VGA: map failed at page %x\n", page);
-      return;
-    }
-    vgaemu_update_prot_cache(page, prot);
-  }
-  for(page = 0xb8; page < 0xc0; page++) {
-    i = alias_mapping(MAPPING_VGAEMU,
-      page << 12, 1 << 12,
-      prot, LOWMEM(page << 12)
-    );
-    if (i == -1) {
-      error("VGA: map failed at page %x\n", page);
-      return;
-    }
-    vgaemu_update_prot_cache(page, prot);
-  }
-}
-
 static void vgaemu_register_ports(void)
 {
   emu_iodev_t io_device = {};
@@ -2457,11 +2422,6 @@ static int __vga_emu_setmode(int mode, int width, int height)
       memset((void *)vga.mem.base, 0, vga.mem.size);
     }
   }
-
-  /* Put the mapping for the range 0xa0000 - 0xc0000 into some intial state:
-   * the scratch page is mapped RW all over the place.
-   */
-  vgaemu_reset_mapping();
 
   vga.mem.bank = 0;
   vga.mem.bank_pages = vmi->buffer_len >> 2;

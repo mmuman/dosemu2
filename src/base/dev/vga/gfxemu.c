@@ -253,7 +253,6 @@ void GFX_write_value(unsigned char data)
       }
       if(NEWBITS(0x0c)) {
         vga.mem.bank = 0;	/* reset this? */
-        vgaemu_reset_mapping();
         switch((data >> 2) & 3) {
           case 0:
             if (config.umb_a0) {
