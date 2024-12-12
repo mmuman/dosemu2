@@ -1140,7 +1140,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
     else {
       vga_msg(
         "vga_emu_fault: unhandled page fault (not in 0xa0000 - 0x%05x range)\n",
-        (0xc0 + vgaemu_bios.pages) * PAGE_SIZE
+        (VGA_C0 + vgaemu_bios.pages) * PAGE_SIZE
       );
       return False;
     }
@@ -1175,8 +1175,8 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
 
 static void vgaemu_update_prot_cache(unsigned page, int prot)
 {
-  if(page >= 0xa0 && page < 0xc0) {
-    vga.mem.prot_map0[page - 0xa0] = prot;
+  if(page >= VGA_A0 && page < VGA_C0) {
+    vga.mem.prot_map0[page - VGA_A0] = prot;
   }
 
   if(
@@ -1190,8 +1190,8 @@ static void vgaemu_update_prot_cache(unsigned page, int prot)
 
 static int vgaemu_prot_ok(unsigned page, int prot)
 {
-  if(page >= 0xa0 && page < 0xc0) {
-    return vga.mem.prot_map0[page - 0xa0] == prot ? 1 : 0;
+  if(page >= VGA_A0 && page < VGA_C0) {
+    return vga.mem.prot_map0[page - VGA_A0] == prot ? 1 : 0;
   }
 
   if(
@@ -1520,9 +1520,9 @@ static int vgaemu_unmap(unsigned page)
   int i;
 
   if(
-    page < 0xa0 ||
-    page >= 0xc0 ||
-    (!vga.config.mono_support && page >= 0xb0 && page < 0xb8)
+    page < VGA_A0 ||
+    page >= VGA_C0 ||
+    (!vga.config.mono_support && page >= VGA_B0 && page < VGA_B8)
   ) return 1;
 
   i = alias_mapping(MAPPING_VGAEMU,
@@ -1682,7 +1682,7 @@ int vga_emu_pre_init(void)
   dirty_all_video_pages();		/* all need an update */
 
   if(
-    (vga.mem.prot_map0 = malloc(vgaemu_bios.pages + 0xc0 - 0xa0)) == NULL ||
+    (vga.mem.prot_map0 = malloc(vgaemu_bios.pages + VGA_C0 - VGA_A0)) == NULL ||
     (vga.mem.prot_map1 = (unsigned char *) malloc(vga.mem.pages)) == NULL
   ) {
     error("vga_emu_init: not enough memory for protection map\n");
@@ -2557,7 +2557,7 @@ int vgaemu_map_bank(void)
    */
   k0 = vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page;
   k1 = k0 + vga.mem.map[VGAEMU_MAP_BANK_MODE].pages;
-  for(j = 0xa0; j < 0xc0; j++) {
+  for(j = VGA_A0; j < VGA_C0; j++) {
     if(j < k0 || j >= k1) {
       i = vgaemu_unmap(j);
       if(i) {
