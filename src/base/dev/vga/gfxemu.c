@@ -295,7 +295,7 @@ void GFX_write_value(unsigned char data)
         gfx_deb(
           "GFX_write_value: memory map = %dk@0x%x\n",
           vga.mem.bank_pages << 2,
-          vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page << 12
+          vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page * PAGE_SIZE
         );
         vgaemu_map_bank();
       }
