@@ -1098,7 +1098,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
   }
 
   if(i == VGAEMU_MAX_MAPPINGS) {
-    if ((unsigned)((page_fault * PAGE_SIZE) - vga.mem.graph_base) <
+    if (lin_addr >= vga.mem.graph_base && lin_addr - vga.mem.graph_base <
 	vga.mem.graph_size) {	/* unmapped VGA area */
       if (pmode) {
         u = instr_len((unsigned char *)SEL_ADR(_cs, _eip),
@@ -1113,12 +1113,12 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
         vga_msg("vga_emu_fault: attempted write to unmapped area (cs:ip += %u)\n", u);
       }
       else {
-        vga_msg("vga_emu_fault: unknown instruction, page at 0x%05x now writable\n", page_fault * PAGE_SIZE);
+        vga_msg("vga_emu_fault: unknown instruction, page at 0x%05x now writable\n", lin_addr);
         vga_emu_protect_page(page_fault, RW, 1);
       }
       return True;
     }
-    else if(memcheck_is_rom(page_fault << PAGE_SHIFT)) {	/* ROM area */
+    else if(memcheck_is_rom(lin_addr)) {	/* ROM area */
       if (pmode) {
         u = instr_len((unsigned char *)SEL_ADR(_cs, _eip),
 	    dpmi_segment_is32(_cs));
@@ -1132,7 +1132,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
         vga_msg("vga_emu_fault: attempted write to ROM area (cs:ip += %u)\n", u);
       }
       else {
-        vga_msg("vga_emu_fault: unknown instruction, converting ROM to RAM at 0x%05x\n", page_fault * PAGE_SIZE);
+        vga_msg("vga_emu_fault: unknown instruction, converting ROM to RAM at 0x%05x\n", lin_addr);
         vga_emu_protect_page(page_fault, RW, 1);
       }
       return True;
