@@ -181,7 +181,7 @@ static int e_vgaemu_fault(sigcontext_t *scp, dosaddr_t cr2)
 {
   int i, j;
   unsigned vga_page = 0, u=0;
-  unsigned page_fault = cr2 >> PAGE_SHIFT;
+  unsigned page_fault = cr2 / HOST_PAGE_SIZE;
 
   for (i = 0; i < VGAEMU_MAX_MAPPINGS; i++) {
     j = page_fault - vga.mem.map[i].base_page;

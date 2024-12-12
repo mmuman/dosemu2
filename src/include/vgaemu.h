@@ -145,10 +145,10 @@
 #define CFG_CRTC_LINE_COMPARE   5
 #define CFG_MODE_CONTROL        6
 
-#define VGA_A0 (GRAPH_BASE / PAGE_SIZE)
-#define VGA_B0 (MDA_PHYS_TEXT_BASE / PAGE_SIZE)
-#define VGA_B8 (VGA_PHYS_TEXT_BASE / PAGE_SIZE)
-#define VGA_C0 (0xc0000 / PAGE_SIZE)
+#define VGA_A0 (GRAPH_BASE / HOST_PAGE_SIZE)
+#define VGA_B0 (MDA_PHYS_TEXT_BASE / HOST_PAGE_SIZE)
+#define VGA_B8 (VGA_PHYS_TEXT_BASE / HOST_PAGE_SIZE)
+#define VGA_C0 (0xc0000 / HOST_PAGE_SIZE)
 
 /*
  * A DAC entry. Note that r, g, b may be 6 or 8 bit values,
