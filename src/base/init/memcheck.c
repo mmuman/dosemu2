@@ -66,7 +66,6 @@ int memcheck_map_reserve(unsigned char map_char, dosaddr_t addr_start,
   c_printf("CONF: reserving %uKb at 0x%5.5X for '%c' (%s)\n", size/1024,
 	   addr_start, map_char, mem_names[map_char]);
 
-  round_addr(&addr_start);
   addr_end = addr_start + size;
   round_addr(&addr_end);
 
@@ -185,7 +184,6 @@ int memcheck_isfree(dosaddr_t addr_start, uint32_t size)
   int cntr;
   dosaddr_t addr_end;
 
-  round_addr(&addr_start);
   addr_end = addr_start + size;
   round_addr(&addr_end);
 
@@ -202,7 +200,6 @@ int memcheck_is_reserved(dosaddr_t addr_start, uint32_t size,
   int cntr;
   dosaddr_t addr_end;
 
-  round_addr(&addr_start);
   addr_end = addr_start + size;
   round_addr(&addr_end);
 
@@ -218,23 +215,26 @@ int memcheck_is_reserved(dosaddr_t addr_start, uint32_t size,
 
 int memcheck_is_rom(dosaddr_t addr)
 {
-  round_addr(&addr);
   if (addr >= LOWMEM_SIZE)
     return 0;
-  return strchr("R", mem_map[addr / GRAN_SIZE]) != NULL;
+  return mem_map[addr / GRAN_SIZE] == 'R';
 }
 
 int memcheck_is_hardware_ram(dosaddr_t addr)
 {
-  round_addr(&addr);
   if (addr >= LOWMEM_SIZE)
     return 0;
-  return strchr("evh", mem_map[addr / GRAN_SIZE]) != NULL;
+  switch (mem_map[addr / GRAN_SIZE]) {
+  case 'e':
+  case 'v':
+  case 'h':
+    return 1;
+  }
+  return 0;
 }
 
 int memcheck_is_system_ram(dosaddr_t addr)
 {
-  round_addr(&addr);
   return !memcheck_is_rom(addr) &&
     !memcheck_is_hardware_ram(addr);
 }
@@ -243,8 +243,6 @@ int memcheck_findhole(dosaddr_t *start_addr, uint32_t min_size,
     uint32_t max_size)
 {
   int cntr;
-
-  round_addr(start_addr);
 
   for (cntr = *start_addr/GRAN_SIZE; cntr < MAX_PAGE; cntr++) {
     int cntr2, end_page;

@@ -19,6 +19,10 @@
 #define PAGE_SIZE	4096
 #endif
 
+#define HOST_PAGE_SIZE		(unsigned int)sysconf(_SC_PAGESIZE)
+#define HOST_PAGE_MASK		(~(HOST_PAGE_SIZE-1))
+#define HOST_PAGE_ALIGN(addr)	(((addr)+HOST_PAGE_SIZE-1)&HOST_PAGE_MASK)
+
 #define _regs vm86s.regs
 
 #ifndef HAVE_STD_C11

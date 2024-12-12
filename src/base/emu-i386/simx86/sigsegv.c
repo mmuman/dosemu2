@@ -177,10 +177,11 @@ static int jitx86_instr_len(const unsigned char *rip)
   return 0;
 }
 
-static int e_vgaemu_fault(sigcontext_t *scp, unsigned page_fault)
+static int e_vgaemu_fault(sigcontext_t *scp, dosaddr_t cr2)
 {
   int i, j;
   unsigned vga_page = 0, u=0;
+  unsigned page_fault = cr2 / HOST_PAGE_SIZE;
 
   for (i = 0; i < VGAEMU_MAX_MAPPINGS; i++) {
     j = page_fault - vga.mem.map[i].base_page;
@@ -194,22 +195,22 @@ static int e_vgaemu_fault(sigcontext_t *scp, unsigned page_fault)
   }
 
   if (i == VGAEMU_MAX_MAPPINGS) {
-    if ((unsigned)((page_fault << 12) - vga.mem.graph_base) <
-	vga.mem.graph_size) {	/* unmapped VGA area */
+    if (cr2 >= vga.mem.graph_base && cr2 - vga.mem.graph_base <
+        vga.mem.graph_size) {	/* unmapped VGA area */
       u = jitx86_instr_len((unsigned char *)_scp_rip);
       _scp_rip += u;
       if (u==0) {
-        e_printf("eVGAEmuFault: unknown instruction, page at 0x%05x now writable\n", page_fault << 12);
+        e_printf("eVGAEmuFault: unknown instruction, page at 0x%05x now writable\n", cr2);
         vga_emu_protect_page(page_fault, VGA_PROT_RW, 1);
 /**/	leavedos_main(0x5640);
       }
       return 1;
     }
-    else if (memcheck_is_rom(page_fault << PAGE_SHIFT)) {	/* ROM area */
+    else if (memcheck_is_rom(cr2)) {	/* ROM area */
       u = jitx86_instr_len((unsigned char *)_scp_rip);
       _scp_rip += u;
       if (u==0 || (_scp_err&2)==0) {
-        e_printf("eVGAEmuFault: unknown instruction, converting ROM to RAM at 0x%05x\n", page_fault << 12);
+        e_printf("eVGAEmuFault: unknown instruction, converting ROM to RAM at 0x%05x\n", cr2);
         vga_emu_protect_page(page_fault, VGA_PROT_RW, 1);
 /**/	leavedos_main(0x5641);
       }
@@ -253,7 +254,7 @@ static int e_emu_pagefault(sigcontext_t *scp, int pmode)
 {
     if (InCompiledCode) {
 	dosaddr_t cr2 = EMUADDR_REL(LINP(_scp_cr2));
-	if (e_vgaemu_fault(scp, cr2 >> 12) == 1)
+	if (e_vgaemu_fault(scp, cr2) == 1)
 	    return 1;
 
 #ifdef HOST_ARCH_X86

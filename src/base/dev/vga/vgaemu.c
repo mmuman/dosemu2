@@ -735,7 +735,7 @@ static void Logical_VGA_write(unsigned offset, unsigned char value)
 
   new_val = Logical_VGA_CalcNewVal(value);
 
-  vga_page = offset >> 12;
+  vga_page = offset / HOST_PAGE_SIZE;
   p = (unsigned char *)(vga.mem.base + offset);
 
   if(MapMask & 0x01) {
@@ -789,11 +789,11 @@ int vga_write_access(dosaddr_t m)
 	if (m >= vga.mem.graph_base &&
 			m < vga.mem.graph_base + vga.mem.graph_size)
 		return 1;
-	if (m >= 0xb8000 && m < 0xc0000 + (vgaemu_bios.pages<<12))
+	if (m >= 0xb8000 && m < 0xc0000 + (vgaemu_bios.pages * HOST_PAGE_SIZE))
 		return 1;
 	if (vga.mem.lfb_base_page &&
-			(m >> PAGE_SHIFT) >= vga.mem.lfb_base_page &&
-			(m >> PAGE_SHIFT) < vga.mem.lfb_base_page + vga.mem.pages)
+			(m / HOST_PAGE_SIZE) >= vga.mem.lfb_base_page &&
+			(m / HOST_PAGE_SIZE) < vga.mem.lfb_base_page + vga.mem.pages)
 		return 1;
 	if (!config.umb_f0 && m >= 0xf0000 && m < 0xf4000)
 		return 1;
@@ -832,10 +832,10 @@ static dosaddr_t vga_get_mem_base_offset(dosaddr_t addr)
 {
   int i;
   for(i = 0; i < VGAEMU_MAX_MAPPINGS; i++) {
-    dosaddr_t base = vga.mem.map[i].base_page << PAGE_SHIFT;
-    dosaddr_t end = base + (vga.mem.map[i].pages << PAGE_SHIFT);
+    dosaddr_t base = vga.mem.map[i].base_page * HOST_PAGE_SIZE;
+    dosaddr_t end = base + (vga.mem.map[i].pages * HOST_PAGE_SIZE);
     if (addr >= base && addr < end)
-      return addr - base + (vga.mem.map[i].first_page << PAGE_SHIFT);
+      return addr - base + (vga.mem.map[i].first_page * HOST_PAGE_SIZE);
   }
   return (dosaddr_t)-1;
 }
@@ -843,8 +843,8 @@ static dosaddr_t vga_get_mem_base_offset(dosaddr_t addr)
 void vga_mark_dirty(dosaddr_t vga_addr, int len)
 {
   unsigned vga_page;
-  for (vga_page = vga_addr >> PAGE_SHIFT;
-       vga_page <= (vga_addr + len - 1) >> PAGE_SHIFT; vga_page++)
+  for (vga_page = vga_addr / HOST_PAGE_SIZE;
+       vga_page <= (vga_addr + len - 1) / HOST_PAGE_SIZE; vga_page++)
     vgaemu_dirty_page(vga_page, 1);
 }
 
@@ -1052,7 +1052,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
   static const char *txt1[VGAEMU_MAX_MAPPINGS + 1] = { "bank", "lfb", "some" };
   unsigned access_type = (err >> 1) & 1;
 #endif
-  page_fault = lin_addr >> 12;
+  page_fault = lin_addr / HOST_PAGE_SIZE;
 
   for(i = 0; i < VGAEMU_MAX_MAPPINGS; i++) {
     j = page_fault - vga.mem.map[i].base_page;
@@ -1098,7 +1098,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
   }
 
   if(i == VGAEMU_MAX_MAPPINGS) {
-    if ((unsigned)((page_fault << 12) - vga.mem.graph_base) <
+    if (lin_addr >= vga.mem.graph_base && lin_addr - vga.mem.graph_base <
 	vga.mem.graph_size) {	/* unmapped VGA area */
       if (pmode) {
         u = instr_len((unsigned char *)SEL_ADR(_cs, _eip),
@@ -1113,12 +1113,12 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
         vga_msg("vga_emu_fault: attempted write to unmapped area (cs:ip += %u)\n", u);
       }
       else {
-        vga_msg("vga_emu_fault: unknown instruction, page at 0x%05x now writable\n", page_fault << 12);
+        vga_msg("vga_emu_fault: unknown instruction, page at 0x%05x now writable\n", lin_addr);
         vga_emu_protect_page(page_fault, RW, 1);
       }
       return True;
     }
-    else if(memcheck_is_rom(page_fault << PAGE_SHIFT)) {	/* ROM area */
+    else if(memcheck_is_rom(lin_addr)) {	/* ROM area */
       if (pmode) {
         u = instr_len((unsigned char *)SEL_ADR(_cs, _eip),
 	    dpmi_segment_is32(_cs));
@@ -1132,7 +1132,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
         vga_msg("vga_emu_fault: attempted write to ROM area (cs:ip += %u)\n", u);
       }
       else {
-        vga_msg("vga_emu_fault: unknown instruction, converting ROM to RAM at 0x%05x\n", page_fault << 12);
+        vga_msg("vga_emu_fault: unknown instruction, converting ROM to RAM at 0x%05x\n", lin_addr);
         vga_emu_protect_page(page_fault, RW, 1);
       }
       return True;
@@ -1140,7 +1140,7 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
     else {
       vga_msg(
         "vga_emu_fault: unhandled page fault (not in 0xa0000 - 0x%05x range)\n",
-        (0xc0 + vgaemu_bios.pages) << 12
+        (VGA_C0 + vgaemu_bios.pages) * HOST_PAGE_SIZE
       );
       return False;
     }
@@ -1175,8 +1175,8 @@ int vga_emu_fault(dosaddr_t lin_addr, unsigned err, cpuctx_t *scp)
 
 static void vgaemu_update_prot_cache(unsigned page, int prot)
 {
-  if(page >= 0xa0 && page < 0xc0) {
-    vga.mem.prot_map0[page - 0xa0] = prot;
+  if(page >= VGA_A0 && page < VGA_C0) {
+    vga.mem.prot_map0[page - VGA_A0] = prot;
   }
 
   if(
@@ -1190,8 +1190,8 @@ static void vgaemu_update_prot_cache(unsigned page, int prot)
 
 static int vgaemu_prot_ok(unsigned page, int prot)
 {
-  if(page >= 0xa0 && page < 0xc0) {
-    return vga.mem.prot_map0[page - 0xa0] == prot ? 1 : 0;
+  if(page >= VGA_A0 && page < VGA_C0) {
+    return vga.mem.prot_map0[page - VGA_A0] == prot ? 1 : 0;
   }
 
   if(
@@ -1245,18 +1245,18 @@ int vga_emu_protect_page(unsigned page, int prot, int instremu)
     page >= vga.mem.lfb_base_page &&
     page < vga.mem.lfb_base_page + vga.mem.pages) {
     dosaddr_t p;
-    p = vga.mem.lfb_base + ((page - vga.mem.lfb_base_page) << 12);
+    p = vga.mem.lfb_base + ((page - vga.mem.lfb_base_page) * HOST_PAGE_SIZE);
     if (instremu)
-      i = mprotect_mapping(MAPPING_VGAEMU, p, 1 << 12, sys_prot);
+      i = mprotect_mapping(MAPPING_VGAEMU, p, 1 * HOST_PAGE_SIZE, sys_prot);
     else
-      i = mprotect_vga(VGAEMU_MAP_LFB_MODE, p, 1 << 12, sys_prot);
+      i = mprotect_vga(VGAEMU_MAP_LFB_MODE, p, 1 * HOST_PAGE_SIZE, sys_prot);
   }
   else {
     if (instremu)
-      i = mprotect_mapping(MAPPING_VGAEMU | MAPPING_LOWMEM, page << 12,
-          1 << 12, sys_prot);
+      i = mprotect_mapping(MAPPING_VGAEMU | MAPPING_LOWMEM, page * HOST_PAGE_SIZE,
+          1 * HOST_PAGE_SIZE, sys_prot);
     else
-      i = mprotect_vga(VGAEMU_MAP_BANK_MODE, page << 12, 1 << 12, sys_prot);
+      i = mprotect_vga(VGAEMU_MAP_BANK_MODE, page * HOST_PAGE_SIZE, 1 * HOST_PAGE_SIZE, sys_prot);
   }
 
   if(i == -1) {
@@ -1420,7 +1420,7 @@ static void _vga_kvm_sync_dirty_map(unsigned mapping)
     return;
 
   base = mapping == VGAEMU_MAP_LFB_MODE ? VGAEMU_PHYS_LFB_BASE :
-    vga.mem.map[mapping].base_page << PAGE_SHIFT;
+    vga.mem.map[mapping].base_page * HOST_PAGE_SIZE;
   if (base == 0)
     return;
 
@@ -1487,8 +1487,8 @@ static int vga_emu_map(unsigned mapping, unsigned first_page)
     if (vga.inst_emu && interp_inst_emu_count)
       cap |= MAPPING_CPUEMU;
     i = alias_mapping(cap,
-      vmt->base_page << 12, vmt->pages << 12,
-      prot, vga.mem.base + (first_page << 12));
+      vmt->base_page * HOST_PAGE_SIZE, vmt->pages * HOST_PAGE_SIZE,
+      prot, vga.mem.base + (first_page * HOST_PAGE_SIZE));
   }
 
   if(i == -1) {
@@ -1520,14 +1520,14 @@ static int vgaemu_unmap(unsigned page)
   int i;
 
   if(
-    page < 0xa0 ||
-    page >= 0xc0 ||
-    (!vga.config.mono_support && page >= 0xb0 && page < 0xb8)
+    page < VGA_A0 ||
+    page >= VGA_C0 ||
+    (!vga.config.mono_support && page >= VGA_B0 && page < VGA_B8)
   ) return 1;
 
   i = alias_mapping(MAPPING_VGAEMU,
-    page << 12, 1 << 12,
-    VGA_EMU_RW_PROT, LOWMEM(page << 12))
+    page * HOST_PAGE_SIZE, 1 * HOST_PAGE_SIZE,
+    VGA_EMU_RW_PROT, LOWMEM(page * HOST_PAGE_SIZE))
   );
 
   if (i == -1) return 3;
@@ -1644,7 +1644,7 @@ int vga_emu_pre_init(void)
   vga.mode_class = -1;
   vga.config.video_off = 1;
   vga.config.standard = 1;
-  vga.mem.plane_pages = 0x10;	/* 16 pages = 64k */
+  vga.mem.plane_pages = 0x10 * PAGE_SIZE / HOST_PAGE_SIZE;	/* 16 pages = 64k */
   vga.dac.bits = 6;
   vga.inst_emu = 0;
 
@@ -1658,7 +1658,7 @@ int vga_emu_pre_init(void)
    * (with 4-plane-modes, to be precise)
    */
   vga.mem.size = (vga.mem.size + ((1 << 18) - 1)) & ~((1 << 18) - 1);
-  vga.mem.pages = vga.mem.size >> 12;
+  vga.mem.pages = vga.mem.size / HOST_PAGE_SIZE;
 
   vga.mem.base = alloc_mapping_huge_page_aligned(MAPPING_VGAEMU, vga.mem.size);
   if(vga.mem.base == MAP_FAILED) {
@@ -1682,7 +1682,7 @@ int vga_emu_pre_init(void)
   dirty_all_video_pages();		/* all need an update */
 
   if(
-    (vga.mem.prot_map0 = malloc(vgaemu_bios.pages + 0xc0 - 0xa0)) == NULL ||
+    (vga.mem.prot_map0 = malloc(vgaemu_bios.pages + VGA_C0 - VGA_A0)) == NULL ||
     (vga.mem.prot_map1 = (unsigned char *) malloc(vga.mem.pages)) == NULL
   ) {
     error("vga_emu_init: not enough memory for protection map\n");
@@ -1719,7 +1719,7 @@ int vga_emu_pre_init(void)
 
   vga.mem.lfb_base = 0;
   if (config.X_lfb && config.dpmi) {
-    void *addr = smalloc_aligned_topdown(&main_pool, NULL, PAGE_SIZE, vga.mem.size);
+    void *addr = smalloc_aligned_topdown(&main_pool, NULL, HOST_PAGE_SIZE, vga.mem.size);
     if (addr) {
       vga.mem.lfb_base = DOSADDR_REL(addr);
       memcheck_addtype('e', "VGAEMU LFB");
@@ -1748,7 +1748,7 @@ int vga_emu_pre_init(void)
 static int vga_emu_post_init(void)
 {
   if(vga.mem.lfb_base != 0) {
-    vga.mem.lfb_base_page = vga.mem.lfb_base >> 12;
+    vga.mem.lfb_base_page = vga.mem.lfb_base / HOST_PAGE_SIZE;
     vga.mem.map[VGAEMU_MAP_LFB_MODE].base_page = vga.mem.lfb_base_page;
     vga.mem.map[VGAEMU_MAP_LFB_MODE].pages = vga.mem.pages;
   }
@@ -1762,7 +1762,7 @@ static int vga_emu_post_init(void)
   vga_msg(
     "vga_emu_init: memory: %u kbyte at %p (lfb at %#x); %ssupport for mono modes\n",
     vga.mem.size >> 10, vga.mem.base,
-    vga.mem.lfb_base_page << 12,
+    vga.mem.lfb_base_page * HOST_PAGE_SIZE,
     vga.config.mono_support ? "" : "no "
   );
 
@@ -1881,17 +1881,17 @@ static int __vga_emu_update(vga_emu_update_type *veut, unsigned display_start,
   unsigned end_page, max_len;
 
   if (pos == -1)
-    pos = display_start >> PAGE_SHIFT;
-  end_page = (display_end - 1) >> PAGE_SHIFT;
+    pos = display_start / HOST_PAGE_SIZE;
+  end_page = (display_end - 1) / HOST_PAGE_SIZE;
   if (pos > end_page)
     return -1;
 
   vga_deb_update("vga_emu_update: display = %d (page = %u) - %d (page = %u), update_pos = %d\n",
     display_start,
-    display_start << PAGE_SHIFT,
+    display_start * HOST_PAGE_SIZE,
     display_end,
     end_page,
-    pos << PAGE_SHIFT
+    pos * HOST_PAGE_SIZE
   );
 
 #if DEBUG_MAP >= 3
@@ -1921,8 +1921,8 @@ static int __vga_emu_update(vga_emu_update_type *veut, unsigned display_start,
     /* if display_start points to the middle of the page, dont clear
      * it immediately: it may still have dirty segments in the beginning,
      * which will be processed after mem wrap. */
-    if (j == pos && pos == (display_start >> PAGE_SHIFT) &&
-	(display_start & (PAGE_SIZE - 1)) && vga.mem.dirty_map[j] == 1)
+    if (j == pos && pos == (display_start / HOST_PAGE_SIZE) &&
+	(display_start & (HOST_PAGE_SIZE - 1)) && vga.mem.dirty_map[j] == 1)
       vga.mem.dirty_map[j] = 2;
     else
       vga.mem.dirty_map[j] = 0;
@@ -1935,18 +1935,18 @@ static int __vga_emu_update(vga_emu_update_type *veut, unsigned display_start,
   if(i == j)
     return -1;
 
-  veut->update_start = i << 12;
-  veut->update_len = (j - i) << 12;
+  veut->update_start = i * HOST_PAGE_SIZE;
+  veut->update_len = (j - i) * HOST_PAGE_SIZE;
   max_len = display_end - veut->update_start;
   if (veut->update_len > max_len) {
-    assert(veut->update_len - max_len < PAGE_SIZE);
+    assert(veut->update_len - max_len < HOST_PAGE_SIZE);
     veut->update_len = max_len;
   }
 
   vga_deb_update("vga_emu_update: update_start = %d, update_len = %d, update_pos = %d\n",
     veut->update_start,
     veut->update_len,
-    pos << PAGE_SHIFT
+    pos * HOST_PAGE_SIZE
   );
 
   return j;
@@ -2424,7 +2424,7 @@ static int __vga_emu_setmode(int mode, int width, int height)
   }
 
   vga.mem.bank = 0;
-  vga.mem.bank_pages = vmi->buffer_len >> 2;
+  vga.mem.bank_pages = (vmi->buffer_len << 10) / HOST_PAGE_SIZE;
 
   /*
    * As we don't have 'planes' in the VGA's sense, we *emulate* them by
@@ -2442,10 +2442,11 @@ static int __vga_emu_setmode(int mode, int width, int height)
    * for this would be an emulation of the 1024x768 16 color mode.
    * Which would be of no particular value anyway. -- sw
    */
-  vga.mem.plane_pages = 0x10;	/* 16 pages = 64k */
+  vga.mem.plane_pages = 0x10 * PAGE_SIZE / HOST_PAGE_SIZE;	/* 16 pages = 64k */
 
   vga.buffer_seg = vmi->buffer_start;
-  vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = vmi->buffer_start >> 8;
+  vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = (vmi->buffer_start << 4) /
+      HOST_PAGE_SIZE;
   vgaemu_map_bank();
   vgaemu_adjust_instremu((vga.mode_type==PL4 || vga.mode_type==PL2)
 			 ? EMU_ALL_INST : 0);
@@ -2540,8 +2541,8 @@ int vgaemu_map_bank(void)
   }
 
   vga.mem.map[VGAEMU_MAP_BANK_MODE].pages = vga.mem.bank_pages;
-  vga.mem.bank_base = vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page << 12;
-  vga.mem.bank_len = vga.mem.map[VGAEMU_MAP_BANK_MODE].pages << 12;
+  vga.mem.bank_base = vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page * HOST_PAGE_SIZE;
+  vga.mem.bank_len = vga.mem.map[VGAEMU_MAP_BANK_MODE].pages * HOST_PAGE_SIZE;
 
   if(vga.mem.write_plane) {
     first = vga.mem.plane_pages * vga.mem.write_plane;
@@ -2557,14 +2558,14 @@ int vgaemu_map_bank(void)
    */
   k0 = vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page;
   k1 = k0 + vga.mem.map[VGAEMU_MAP_BANK_MODE].pages;
-  for(j = 0xa0; j < 0xc0; j++) {
+  for(j = VGA_A0; j < VGA_C0; j++) {
     if(j < k0 || j >= k1) {
       i = vgaemu_unmap(j);
       if(i) {
-        vga_msg("vgaemu_map_bank: failed to unmap page at 0x%x; reason: %d\n", j << 12, i);
+        vga_msg("vgaemu_map_bank: failed to unmap page at 0x%x; reason: %d\n", j * HOST_PAGE_SIZE, i);
       }
       else {
-        vga_deb2_bank("vgaemu_map_bank: page at 0x%x unmapped\n", j << 12);
+        vga_deb2_bank("vgaemu_map_bank: page at 0x%x unmapped\n", j * HOST_PAGE_SIZE);
       }
     }
   }
@@ -2582,7 +2583,7 @@ int vgaemu_map_bank(void)
       "vgaemu_map_bank: failed to map %uk (ofs %uk) at 0x%x; reason: %d\n",
       vga.mem.map[VGAEMU_MAP_BANK_MODE].pages << 2,
       first << 2,
-      vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page << 12,
+      vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page * HOST_PAGE_SIZE,
       i
     );
   }
@@ -2591,7 +2592,7 @@ int vgaemu_map_bank(void)
       "vgaemu_map_bank: mapped %uk (ofs %uk) at 0x%x\n",
       vga.mem.map[VGAEMU_MAP_BANK_MODE].pages << 2,
       first << 2,
-      vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page << 12
+      vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page * HOST_PAGE_SIZE
     );
   }
 
@@ -2833,7 +2834,7 @@ static void vgaemu_adjust_instremu(int value)
   }
   if (changed &&
       (config.cpu_vm == CPUVM_KVM || config.cpu_vm_dpmi == CPUVM_KVM))
-    kvm_set_mmio(vmt->base_page << PAGE_SHIFT, vmt->pages << PAGE_SHIFT,
+    kvm_set_mmio(vmt->base_page * HOST_PAGE_SIZE, vmt->pages * HOST_PAGE_SIZE,
 		 value != 0);
 }
 

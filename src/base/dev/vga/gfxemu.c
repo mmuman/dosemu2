@@ -258,10 +258,10 @@ void GFX_write_value(unsigned char data)
             if (config.umb_a0) {
               error("VGA: avoid touching a000 as it is used for UMB\n");
               vga.mem.bank_pages = 0;
-              vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = 0xb0;
+              vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = VGA_B0;
             } else {
-              vga.mem.bank_pages = 32;
-              vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = 0xa0;
+              vga.mem.bank_pages = 32 * PAGE_SIZE / HOST_PAGE_SIZE;
+              vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = VGA_A0;
             }
             break;
 
@@ -269,10 +269,10 @@ void GFX_write_value(unsigned char data)
             if (config.umb_a0) {
               error("VGA: avoid touching a000 as it is used for UMB\n");
               vga.mem.bank_pages = 0;
-              vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = 0xb0;
+              vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = VGA_B0;
             } else {
-              vga.mem.bank_pages = 16;
-              vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = 0xa0;
+              vga.mem.bank_pages = 16 * PAGE_SIZE / HOST_PAGE_SIZE;
+              vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = VGA_A0;
             }
             break;
 
@@ -280,22 +280,22 @@ void GFX_write_value(unsigned char data)
             if (config.umb_b0) {
               error("VGA: avoid touching b000 as it is used for UMB\n");
               vga.mem.bank_pages = 0;
-              vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = 0xb8;
+              vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = VGA_B8;
             } else {
-              vga.mem.bank_pages = 8;
-              vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = 0xb0;
+              vga.mem.bank_pages = 8 * PAGE_SIZE / HOST_PAGE_SIZE;
+              vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = VGA_B0;
             }
             break;
 
           case 3:
-            vga.mem.bank_pages = 8;
-            vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = 0xb8;
+            vga.mem.bank_pages = 8 * PAGE_SIZE / HOST_PAGE_SIZE;
+            vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page = VGA_B8;
             break;
         }
         gfx_deb(
           "GFX_write_value: memory map = %dk@0x%x\n",
-          vga.mem.bank_pages << 2,
-          vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page << 12
+          (vga.mem.bank_pages * HOST_PAGE_SIZE) >> 10,
+          vga.mem.map[VGAEMU_MAP_BANK_MODE].base_page * HOST_PAGE_SIZE
         );
         vgaemu_map_bank();
       }
