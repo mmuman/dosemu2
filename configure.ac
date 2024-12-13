@@ -301,6 +301,10 @@ AC_CHECK_FUNCS([statfs])
 # memfd_create is linkable on android, but may not be declared, so re-check
 AC_CHECK_DECLS([memfd_create],,, [[#include <sys/mman.h>]])
 
+AC_CHECK_FUNC(sem_open,, [
+  AC_CHECK_LIB(android-posix-semaphore, sem_open)
+])
+
 AC_CHECK_DECLS([F_OFD_SETLK], [
     USE_OFD_LOCKS=1
     AC_SUBST(USE_OFD_LOCKS)
