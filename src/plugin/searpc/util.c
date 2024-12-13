@@ -50,6 +50,12 @@ static char *transport_callback(void *arg, const char *fcall_str,
     return g_strndup(buf, sd);
 }
 
+static void chld_crash(int sig)
+{
+    fprintf(stderr, "RPC server crashed\n");
+    exit(7);
+}
+
 SearpcClient *clnt_init(int *sock_rx, init_cb_t init_cb,
         void *init_arg, int (*svc_ex)(void),
         void (*ex_cb)(void *), const char *svc_name, pid_t *r_pid)
@@ -60,6 +66,7 @@ SearpcClient *clnt_init(int *sock_rx, init_cb_t init_cb,
     pid_t pid;
     int err;
     pshared_sem_t svc_sem;
+    struct sigaction act;
 
     err = socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, socks);
     if (err) {
@@ -105,7 +112,9 @@ SearpcClient *clnt_init(int *sock_rx, init_cb_t init_cb,
 
     close(socks[1]);
     close(transp[1]);
+    sigchld_set_critical(chld_crash, &act);
     pshared_sem_wait(svc_sem);
+    sigchld_unset_critical(&act);
     pshared_sem_destroy(&svc_sem);
 
     clnt = searpc_client_new();

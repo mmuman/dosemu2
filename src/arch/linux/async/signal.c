@@ -882,3 +882,18 @@ void signal_block_async_nosig(sigset_t *old_mask)
   assert(fault_cnt == 0);
   pthread_sigmask(SIG_BLOCK, &nonfatal_q_mask, old_mask);
 }
+
+void sigchld_set_critical(void (*handler)(int), struct sigaction *act)
+{
+  struct sigaction sa;
+
+  sa.sa_handler = handler;
+  sa.sa_mask = nonfatal_q_mask;
+  sa.sa_flags = 0;
+  sigaction(SIGCHLD, &sa, act);
+}
+
+void sigchld_unset_critical(const struct sigaction *act)
+{
+  sigaction(SIGCHLD, act, NULL);
+}

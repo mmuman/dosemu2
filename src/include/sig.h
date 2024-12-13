@@ -184,6 +184,9 @@ void signal_block_async_nosig(sigset_t *old_mask);
 void signal_unblock_fatal_sigs(void);
 void signal_unblock_async_sigs(void);
 void signal_restore_async_sigs(void);
+void sigchld_set_critical(void (*handler)(int), struct sigaction *act);
+void sigchld_unset_critical(const struct sigaction *act);
+
 void leavedos_sig(int sig);
 void handle_fault(int sig, const siginfo_t *si, sigcontext_t *scp);
 
