@@ -302,7 +302,16 @@ AC_CHECK_FUNCS([statfs])
 AC_CHECK_DECLS([memfd_create],,, [[#include <sys/mman.h>]])
 
 AC_CHECK_FUNC(sem_open,, [
-  AC_CHECK_LIB(android-posix-semaphore, sem_open)
+  AC_MSG_ERROR(sem_open function missing.)
+])
+AC_MSG_CHECKING([for working sem_open])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <semaphore.h>]], [[
+  sem_open("", 0);
+]])], [
+  AC_MSG_RESULT([yes])
+], [
+  AC_MSG_RESULT([no])
+  AC_CHECK_LIB(android-posix-semaphore, libandroid_sem_open)
 ])
 
 AC_CHECK_DECLS([F_OFD_SETLK], [
