@@ -19,7 +19,9 @@ AC_PROG_CPP
 AX_PROG_CC_FOR_BUILD
 AC_USE_SYSTEM_EXTENSIONS
 
-if test "x$prefix" != xNONE; then
+# termux uses PREFIX var for default prefix, but we add /local to it
+AC_PREFIX_DEFAULT([${PREFIX:-/usr}/local])
+if test "x$prefix" != "xNONE"; then
   LDFLAGS="$LDFLAGS -L${prefix}/lib"
 fi
 
