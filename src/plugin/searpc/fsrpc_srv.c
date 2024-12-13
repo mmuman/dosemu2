@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <utime.h>
 #include <assert.h>
 #include <errno.h>
