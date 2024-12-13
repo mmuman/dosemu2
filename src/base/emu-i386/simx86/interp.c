@@ -654,8 +654,10 @@ static unsigned int _Interp86(unsigned int PC, int basemode)
 	TheCPU.err = 0;
 	CEmuStat &= ~CeS_TRAP;
 
+#ifndef __clang__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdiscarded-qualifiers"
+#endif
 	while (Running) {
 		TheCPU.mode = mode = basemode;
 		PC = interp_pre(PC, mode, &NewNode, &P0);
@@ -668,7 +670,9 @@ static unsigned int _Interp86(unsigned int PC, int basemode)
 		if (TheCPU.err)
 			return PC;
 	}
+#ifndef __clang__
 #pragma GCC diagnostic pop
+#endif
 	return 0;
 }
 
