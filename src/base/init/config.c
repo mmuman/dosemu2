@@ -569,7 +569,7 @@ static void move_dosemu_lib_dir(void)
 {
   char *old_cmd_path;
   const char *rp;
-  char buf[256];
+  char buf[PATH_MAX];
 
   if (!dosemu_plugin_dir_path)
     dosemu_plugin_dir_path = path_prefix(DOSEMUPLUGINDIR);
@@ -602,6 +602,16 @@ static void move_dosemu_lib_dir(void)
   if (dosemu_rundir_path) {
     dosemu_midi_path = assemble_path(dosemu_rundir_path, DOSEMU_MIDI);
     dosemu_midi_in_path = assemble_path(dosemu_rundir_path, DOSEMU_MIDI_IN);
+  }
+
+  if (running_suid_orig())
+    snprintf(buf, sizeof(buf), "dosemu2_%i_%i", getuid(), get_suid());
+  else
+    snprintf(buf, sizeof(buf), "dosemu2_%i", getuid());
+  dosemu_tmpdir = mkdir_under(getenv("TMPDIR") ?: "/tmp", buf);
+  if (!dosemu_tmpdir) {
+    error("failed to create tmpdir\n");
+    exit(1);
   }
 }
 
@@ -1168,7 +1178,6 @@ config_init(int argc, char **argv)
     int             nodosrc = 0;
     char           *basename;
     int             err;
-    char            buf[256];
     int             was_exec = 0, was_T1 = 0;
     const char * const getopt_string =
        "23456A::B::C::c::D:d:E:e:f:H:hi:I:K:k::L:M:mNno:P:qSsT::t::VvwXx:Y"
@@ -1281,15 +1290,6 @@ config_init(int argc, char **argv)
     stdio_init();		/* initialize stdio & open debug file */
     if (config_check_only) set_debug_level('c',1);
 
-    if (running_suid_orig())
-	snprintf(buf, sizeof(buf), "dosemu2_%i_%i", getuid(), get_suid());
-    else
-	snprintf(buf, sizeof(buf), "dosemu2_%i", getuid());
-    dosemu_tmpdir = mkdir_under(getenv("TMPDIR") ?: "/tmp", buf);
-    if (!dosemu_tmpdir) {
-	error("failed to create tmpdir\n");
-	exit(1);
-    }
     shlock_init(dosemu_tmpdir);
 
     if (nodosrc && dosrcname) {
