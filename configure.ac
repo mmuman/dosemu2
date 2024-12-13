@@ -324,10 +324,8 @@ AC_CHECK_DECLS([MADV_POPULATE_WRITE, MADV_COLD],,,
   [[#include <sys/mman.h>]])
 
 AC_CHECK_TYPES([__float80],, [
-    if test "$machine" != "i386" -a "$machine" != "x86_64"; then
-      USE_SOFTFLOAT=1
-      AC_SUBST(USE_SOFTFLOAT)
-    fi
+    USE_SOFTFLOAT=1
+    AC_SUBST(USE_SOFTFLOAT)
   ]
 )
 AC_CHECK_TYPES([_Float128])
