@@ -197,6 +197,7 @@ AC_CHECK_PROGS([REALPATH], [realpath])
 if test -z "$REALPATH"; then
   AC_MSG_ERROR(You don't have realpath installed)
 fi
+AC_PROG_AR
 AC_PROG_RANLIB
 AC_PROG_YACC
 dnl The bison problem
