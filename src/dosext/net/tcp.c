@@ -998,7 +998,7 @@ static void tcp_hlt(Bit16u idx, HLT_ARG(arg))
     coopth_start(tcp_tid, NULL);
 }
 
-void tcp_reset(void)
+void emutcp_reset(void)
 {
     if (!config.tcpdrv)
       return;
@@ -1007,7 +1007,7 @@ void tcp_reset(void)
     MEMSET_DOS(SEGOFF2LINEAR(PKTDRV_SEG, TCPDRV_iface_name), '\0', 16);
 }
 
-void tcp_init(void)
+void emutcp_init(void)
 {
     emu_hlt_t hlt_hdlr = HLT_INITIALIZER;
     if (!config.tcpdrv)
@@ -1019,7 +1019,7 @@ void tcp_init(void)
     tcp_tid = coopth_create("TCP_call", tcp_thr);
 }
 
-void tcp_done(void)
+void emutcp_done(void)
 {
     int i;
 
