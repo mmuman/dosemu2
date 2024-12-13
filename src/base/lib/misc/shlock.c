@@ -49,7 +49,7 @@
 #include <assert.h>
 #include "shlock.h"
 
-static char LOCK_DIR[PATH_MAX] = "/tmp";
+static char LOCK_DIR[PATH_MAX];
 #define LOCK_PFX "LCK.."
 
 struct shlck {
@@ -108,6 +108,10 @@ void *shlock_open(const char *dir, const char *name, int excl, int block)
   int fd, tmp_fd, rc;
   int flg = block ? 0 : LOCK_NB;
 
+  if (!LOCK_DIR[0]) {
+    fprintf(stderr, "shlock not initialized\n");
+    return NULL;
+  }
   rc = asprintf(&dspec, "%s/%s", LOCK_DIR, dir);
   assert(rc != -1);
   rc = asprintf(&fspec, "%s/%s", dspec, name);

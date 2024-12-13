@@ -26,11 +26,13 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <assert.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "dosemu_config.h"
 #include "dosemu_debug.h"
 #include "mapping.h"
 #include "mpriv.h"
@@ -97,8 +99,11 @@ static void *alias_mapping_file(int cap, void *target, size_t mapsize, int prote
 
 static int do_open_file(void)
 {
-  char tmp[] = "/tmp/dosemu2_mapfile_XXXXXX";
-  int fd = mkstemp(tmp);
+  char tmp[PATH_MAX];
+  int fd;
+
+  snprintf(tmp, sizeof(tmp), "%s/dosemu2_mapfile_XXXXXX", dosemu_tmpdir);
+  fd = mkstemp(tmp);
   if (fd == -1) {
     perror("mkstemp()");
     return -1;

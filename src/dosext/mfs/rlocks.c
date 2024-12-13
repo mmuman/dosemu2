@@ -53,7 +53,9 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <assert.h>
+#include "dosemu_config.h"
 #include "dosemu_debug.h"
 #include "rlocks.h"
 
@@ -182,11 +184,12 @@ void region_unlock_offs(int fd)
 #if FUNLCK_WA
 void open_mlemu(int *r_fds)
 {
-  char mltmpl[] = "/tmp/dosemu2_mlemu_XXXXXX";
+  char mltmpl[PATH_MAX];
   int fd0, fd1;
   struct flock fl;
   int err;
 
+  snprintf(mltmpl, sizeof(mltmpl), "%s/dosemu2_mlemu_XXXXXX", dosemu_tmpdir);
   r_fds[0] = r_fds[1] = -1;
   /* create 2 fds, 1 for mirroring locks and 1 for testing locks */
   fd0 = mkstemp(mltmpl);

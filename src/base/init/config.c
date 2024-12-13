@@ -1285,7 +1285,7 @@ config_init(int argc, char **argv)
 	snprintf(buf, sizeof(buf), "dosemu2_%i_%i", getuid(), get_suid());
     else
 	snprintf(buf, sizeof(buf), "dosemu2_%i", getuid());
-    dosemu_tmpdir = mkdir_under("/tmp", buf);
+    dosemu_tmpdir = mkdir_under(getenv("TMPDIR") ?: "/tmp", buf);
     if (!dosemu_tmpdir) {
 	error("failed to create tmpdir\n");
 	exit(1);
