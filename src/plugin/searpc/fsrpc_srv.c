@@ -251,7 +251,11 @@ static GObject* shm_open_1_svc(const char *name, int oflag, int mode)
 {
     int fd;
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
+#ifdef HAVE_SHM_OPEN
     fd = shm_open(name, oflag, mode);
+#else
+    fd = -1;
+#endif
     ASSERT_C(fd >= 0);
     CALL(send_fd(sock_tx, fd));
     close(fd);
@@ -260,7 +264,11 @@ static GObject* shm_open_1_svc(const char *name, int oflag, int mode)
 
 static int shm_unlink_1_svc(const char *name)
 {
+#ifdef HAVE_SHM_OPEN
     return shm_unlink(name);
+#else
+    return -1;
+#endif
 }
 
 int fsrpc_srv_init(const char *svc_name, int fd, plist_idx_t pi, setattr_t sa,

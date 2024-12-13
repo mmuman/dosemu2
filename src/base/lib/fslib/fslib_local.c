@@ -209,6 +209,24 @@ static int fslocal_path_ok(int idx, const char *path)
   return path_ok(idx, path);
 }
 
+static int fslocal_shm_open(const char *name, int oflag, mode_t mode)
+{
+#ifdef HAVE_SHM_OPEN
+  return shm_open(name, oflag, mode);
+#else
+  return -1;
+#endif
+}
+
+static int fslocal_shm_unlink(const char *name)
+{
+#ifdef HAVE_SHM_OPEN
+  return shm_unlink(name);
+#else
+  return -1;
+#endif
+}
+
 static const struct fslib_ops fslops = {
   .add_path = add_path,
   .add_path_ex = add_path_ex,
@@ -229,8 +247,8 @@ static const struct fslib_ops fslops = {
   .seal = fslocal_seal,
   .exit = fslocal_done,
   .path_ok = fslocal_path_ok,
-  .shm_open = shm_open,
-  .shm_unlink = shm_unlink,
+  .shm_open = fslocal_shm_open,
+  .shm_unlink = fslocal_shm_unlink,
   .name = "local",
   .flags = FSFLG_NOSUID,
 };
