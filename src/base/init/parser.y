@@ -2196,7 +2196,7 @@ static void do_part(char *dev)
 
 static void stop_disk(int token)
 {
-#ifdef __linux__
+#if 0
   FILE   *f;
   struct mntent *mtab;
   int    mounted_rw;
@@ -2245,7 +2245,7 @@ static void stop_disk(int token)
 
   if (dptr->type == PARTITION) {
     c_printf(" partition# %d", dptr->part_info.number);
-#ifdef __linux__
+#if 0
     mtab = NULL;
     if ((f = setmntent(MOUNTED, "r")) != NULL) {
       while ((mtab = getmntent(f)))
