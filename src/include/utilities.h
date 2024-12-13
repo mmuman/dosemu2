@@ -168,4 +168,7 @@ pid_t run_external_command(const char *path, int argc,
   optind = 0
 #endif
 
+int emu_shm_open(const char *name, int oflag, mode_t mode);
+int emu_shm_unlink(const char *name);
+
 #endif /* UTILITIES_H */

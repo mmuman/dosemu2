@@ -25,6 +25,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
+#include "utilities.h"
 #include "fssvc.h"
 #include "fslib_ops.h"
 
@@ -214,7 +215,7 @@ static int fslocal_shm_open(const char *name, int oflag, mode_t mode)
 #ifdef HAVE_SHM_OPEN
   return shm_open(name, oflag, mode);
 #else
-  return -1;
+  return emu_shm_open(name, oflag, mode);
 #endif
 }
 
@@ -223,7 +224,7 @@ static int fslocal_shm_unlink(const char *name)
 #ifdef HAVE_SHM_OPEN
   return shm_unlink(name);
 #else
-  return -1;
+  return emu_shm_unlink(name);
 #endif
 }
 

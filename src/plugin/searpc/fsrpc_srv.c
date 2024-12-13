@@ -255,7 +255,7 @@ static GObject* shm_open_1_svc(const char *name, int oflag, int mode)
 #ifdef HAVE_SHM_OPEN
     fd = shm_open(name, oflag, mode);
 #else
-    fd = -1;
+    fd = emu_shm_open(name, oflag, mode);
 #endif
     ASSERT_C(fd >= 0);
     CALL(send_fd(sock_tx, fd));
@@ -268,7 +268,7 @@ static int shm_unlink_1_svc(const char *name)
 #ifdef HAVE_SHM_OPEN
     return shm_unlink(name);
 #else
-    return -1;
+    return emu_shm_unlink(name);
 #endif
 }
 

@@ -1407,3 +1407,25 @@ int recv_fd(int sock)
         return -1;
     return *p;
 }
+
+int emu_shm_open(const char *name, int oflag, mode_t mode)
+{
+    int ret;
+    char *path = assemble_path(dosemu_tmpdir, name);
+    if (!path)
+        return -1;
+    ret = open(path, oflag | O_CLOEXEC, mode);
+    free(path);
+    return ret;
+}
+
+int emu_shm_unlink(const char *name)
+{
+    int ret;
+    char *path = assemble_path(dosemu_tmpdir, name);
+    if (!path)
+        return -1;
+    ret = unlink(path);
+    free(path);
+    return ret;
+}
