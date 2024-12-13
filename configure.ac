@@ -50,7 +50,7 @@ else
     DOSEMU_CFLAGS="$DOSEMU_CFLAGS -fpermissive -Wno-narrowing"
   else
     AC_MSG_RESULT([no])
-    DOSEMU_CFLAGS="$DOSEMU_CFLAGS -fplan9-extensions"
+    DOSEMU_CFLAGS="$DOSEMU_CFLAGS -fplan9-extensions -Wstrict-aliasing=3"
   fi
 fi
 
@@ -384,7 +384,7 @@ AC_DEFINE_DIR([SYSTEM_XFONTS_PATH], [x11fontdir], [ Directory for x11 fonts ])
 DOSEMU_CPPFLAGS="$DOSEMU_CPPFLAGS -imacros emu_config.h"
 DOSEMU_CFLAGS="$DOSEMU_CFLAGS -Wall -Wstrict-prototypes -Wmissing-declarations \
 -Wnested-externs -fms-extensions -pthread \
--Wno-unused-result -Wcast-qual -Wwrite-strings -Wstrict-aliasing=3 -Wundef"
+-Wno-unused-result -Wcast-qual -Wwrite-strings -Wundef"
 AX_CHECK_COMPILE_FLAG([-Waddress-of-packed-member],
   [DOSEMU_CFLAGS="$DOSEMU_CFLAGS -Wno-address-of-packed-member"],, [-Werror])
 AX_CHECK_COMPILE_FLAG([-Wstring-plus-int],
