@@ -134,7 +134,7 @@ endif
 	$(RM) -r $(DESTDIR)$(dosemudir)/freedos
 	$(RM) -r $(cmddir)
 	$(RM) -r $(sysdir)
-	$(INSTALL) -d $(DESTDIR)$(etcdir)
+	$(INSTALL) -d $(DESTDIR)$(etcdir) || true
 
 	$(INSTALL) -d $(sysdir)
 	for i in `find $(SRCPATH)/bindist -maxdepth 1 -type f`; do \
@@ -148,7 +148,7 @@ endif
 	$(INSTALL) -m 0644 -D $(SRCPATH)/bindist/bat/dosrc.d/* $(cmddir)/dosrc.d
 	cp -f -d $(SYS)/* $(cmddir)
 	$(LN_S) -f $(cmdsuff) $(DESTDIR)$(dosemudir)/commands
-	if [ ! -f $(DESTDIR)$(etcdir)/dosemu.conf ]; then \
+	if [ -d $(DESTDIR)$(etcdir) -a ! -f $(DESTDIR)$(etcdir)/dosemu.conf ]; then \
 	  $(INSTALL) -m 0644 $(REALTOPDIR)/etc/dosemu.conf $(DESTDIR)$(etcdir); \
 	fi
 	$(INSTALL) -d $(DESTDIR)$(dosemudir)/keymap
