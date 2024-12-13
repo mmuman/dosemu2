@@ -2,6 +2,8 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_CONFIG_HEADERS([_fdppconf.h])
 AC_CONFIG_FILES([Makefile.conf])
+AC_PREFIX_DEFAULT([${PREFIX:-/usr}/local])
+
 PKG_PROG_PKG_CONFIG
 AC_ARG_WITH([fdpp-lib-dir], AS_HELP_STRING([--with-fdpp-lib-dir=DIR],
         [use alternate fdpp dir]),
