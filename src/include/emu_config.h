@@ -15,4 +15,6 @@
 #define USE_ASAN 0
 #endif
 
+#define PREFIX PREFIXDIR
+
 #endif

@@ -409,7 +409,8 @@ AC_SUBST(username)
 
 AC_DEFINE_DIR([SYSCONFDIR], [sysconfdir], [ System config dir ])
 AC_DEFINE_DIR([CONFSUBDIR], [confdir], [ dosemu-specific config subdir ])
-AC_DEFINE_DIR([PREFIX], [prefix], [ prefix ])
+# use PREFIXDIR instead of PREFIX to not corrupt PREFIX var used on Termux
+AC_DEFINE_DIR([PREFIXDIR], [prefix], [ prefix ])
 AC_DEFINE_DIR([LIBEXECDIR], [libexecdir], [ Where extra executables are placed to ])
 AC_DEFINE_DIR([SYSTEM_XFONTS_PATH], [x11fontdir], [ Directory for x11 fonts ])
 
