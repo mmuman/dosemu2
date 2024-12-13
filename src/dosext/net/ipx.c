@@ -81,8 +81,15 @@ static void ipx_int7a_thr(void *arg)
 static void ipx_call(uint16_t idx, HLT_ARG(arg))
 {
   fake_retf();
-  if (!iops)
+  if (!iops) {
+#ifdef IPX
     iops = &native_ipx_ops;
+#else
+    error("IPX unavailable\n");
+    CARRY;
+    return;
+#endif
+  }
   coopth_start(int7a_tid, NULL);
 }
 
@@ -786,7 +793,9 @@ static void do_int7a(void)
   u_char *AddrPtr;
   far_t ECBPtr;
   unsigned long network;
+#ifdef IPX
   int hops, ticks;
+#endif
 
   n_printf("IPX: request number 0x%x\n", LWORD(ebx));
   switch (LWORD(ebx)) {
@@ -814,6 +823,7 @@ static void do_int7a(void)
       LO(ax) = RCODE_SUCCESS;
       LWORD(ecx) = 1;
     } else {
+#ifdef IPX
       if( IPXGetLocalTarget( network, &hops, &ticks )==0 ) {
         LO(ax) = RCODE_SUCCESS;
         LWORD(ecx) = ticks;
@@ -821,6 +831,10 @@ static void do_int7a(void)
         n_printf("IPX: GetLocalTarget failed.\n");
         LO(ax) = RCODE_CANNOT_FIND_ROUTE;
       }
+#else
+      n_printf("IPX: GetLocalTarget failed.\n");
+      LO(ax) = RCODE_CANNOT_FIND_ROUTE;
+#endif
     }
     break;
   case IPX_FAST_SEND:
