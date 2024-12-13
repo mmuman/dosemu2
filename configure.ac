@@ -19,6 +19,10 @@ AC_PROG_CPP
 AX_PROG_CC_FOR_BUILD
 AC_USE_SYSTEM_EXTENSIONS
 
+if test "x$prefix" != xNONE; then
+  LDFLAGS="$LDFLAGS -L${prefix}/lib"
+fi
+
 AC_MSG_CHECKING([for $CC actually being clang])
 if $CC -v 2>&1|grep 'clang' >/dev/null; then
   AC_MSG_RESULT([yes])
