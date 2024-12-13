@@ -886,14 +886,19 @@ void signal_block_async_nosig(sigset_t *old_mask)
 void sigchld_set_critical(void (*handler)(int), struct sigaction *act)
 {
   struct sigaction sa;
+  sigset_t set;
 
   sa.sa_handler = handler;
   sa.sa_mask = nonfatal_q_mask;
   sa.sa_flags = 0;
   sigaction(SIGCHLD, &sa, act);
+  sigemptyset(&set);
+  sigaddset(&set, SIGCHLD);
+  pthread_sigmask(SIG_UNBLOCK, &set, NULL);
 }
 
 void sigchld_unset_critical(const struct sigaction *act)
 {
+  pthread_sigmask(SIG_BLOCK, &q_mask, NULL);
   sigaction(SIGCHLD, act, NULL);
 }
