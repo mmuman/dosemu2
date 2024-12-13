@@ -21,6 +21,9 @@ AC_USE_SYSTEM_EXTENSIONS
 
 # termux uses PREFIX var for default prefix, but we add /local to it
 AC_PREFIX_DEFAULT([${PREFIX:-/usr}/local])
+if test -n "$PREFIX"; then
+  LDFLAGS="$LDFLAGS -L${ac_default_prefix}/lib"
+fi
 if test "x$prefix" != "xNONE"; then
   LDFLAGS="$LDFLAGS -L${prefix}/lib"
 fi
