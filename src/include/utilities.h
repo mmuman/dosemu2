@@ -121,6 +121,10 @@ FILE *fstream_tee(FILE *orig);
     pthread_cleanup_pop(0); \
 }
 
+#ifdef __ANDROID__
+#define pthread_cancel(t) pthread_kill(t, SIGKILL)
+#endif
+
 typedef sem_t *pshared_sem_t;
 static inline int pshared_sem_post(pshared_sem_t sem)
 {
