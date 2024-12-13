@@ -24,6 +24,7 @@
 #include "emu.h"
 #include "ipx.h"
 #include "ipx_be.h"
+#ifdef IPX
 
 static unsigned char MyAddress[10] =
 {0x01, 0x01, 0x00, 0xe0,
@@ -242,3 +243,4 @@ const struct ipx_ops native_ipx_ops = {
   do_recv,
   do_send,
 };
+#endif

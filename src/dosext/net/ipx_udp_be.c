@@ -31,6 +31,7 @@
 #include "emu.h"
 #include "ipx.h"
 #include "ipx_be.h"
+#ifdef IPX
 
 static int udp_sock = -1;
 static int udp_enabled;
@@ -355,3 +356,4 @@ void ipx_helper(struct vm86_regs *regs)
             break;
     }
 }
+#endif
