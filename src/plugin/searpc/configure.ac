@@ -23,6 +23,7 @@ AC_SUBST(RPCGEN)
 
 AC_MSG_CHECKING([for remote DPMI-compatible host])
 CONFIG_HOST=`uname -s`
+CONFIG_OS=`uname -o`
 machine=`cc -dumpmachine | cut -d- -f1 | sed 's/i.86/i386/'`
 if test "$CONFIG_HOST" != "Linux"; then
   nok=1
@@ -32,6 +33,12 @@ if test "$nok" != "1"; then
   if test "$machine" != "i386" -a "$machine" != "x86_64"; then
     nok=1
     AC_MSG_RESULT([unsupported arch])
+  fi
+fi
+if test "$nok" != "1"; then
+  if test "$CONFIG_OS" = "Android"; then
+    nok=1
+    AC_MSG_RESULT([no, uffd unsupported on android])
   fi
 fi
 if test "$nok" != "1"; then
