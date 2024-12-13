@@ -1,3 +1,8 @@
+# no ldconfig in Termux, so for non-std prefix set explicit lib path
+if test -n "$PREFIX" -a "$prefix" != "$PREFIX"; then
+  export LD_LIBRARY_PATH=${prefix}/lib
+fi
+
 get_binary() {
   BINDIR=$(realpath `dirname "$1"`)
   if [ "$BINDIR" = "$(realpath -q $LOCAL_BUILD_PATH/$LOCAL_BIN_DIR)" ]; then
