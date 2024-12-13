@@ -197,8 +197,15 @@ AC_CHECK_PROGS([REALPATH], [realpath])
 if test -z "$REALPATH"; then
   AC_MSG_ERROR(You don't have realpath installed)
 fi
-AC_PROG_AR
+#AC_PROG_AR
+AC_CHECK_TOOL([AR], [ar], [:])
+if test -z "$AR" -o "$AR" = ":"; then
+  AC_MSG_ERROR(You don't have ar installed)
+fi
 AC_PROG_RANLIB
+if test -z "$RANLIB" -o "$RANLIB" = ":"; then
+  AC_MSG_ERROR(You don't have ranlib installed)
+fi
 AC_PROG_YACC
 dnl The bison problem
 if test -z "`echo $YACC | grep bison`" ; then
@@ -210,7 +217,7 @@ AC_PROG_GREP
 AC_PROG_EGREP
 AC_PROG_SED
 AC_PROG_AWK
-if test "$ac_cv_prog_AWK" != "gawk" ; then
+if test "$AWK" != "gawk" ; then
   AC_MSG_ERROR(Install gawk and retry.)
 fi
 AC_CHECK_PROGS([PKG_CONFIG], [pkg-config])
