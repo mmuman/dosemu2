@@ -171,7 +171,7 @@ AC_SUBST(AS_LD)
 AC_SUBST(XOBJCOPY)
 AC_PROG_INSTALL
 AC_PROG_LEX([noyywrap])
-if test -z "$LEX"; then
+if test -z "$LEX" -o "$LEX" = ":"; then
   AC_MSG_WARN(Your system doesn't seem to have lex or flex available.)
   AC_MSG_ERROR(Install lex or flex and retry.)
 fi
