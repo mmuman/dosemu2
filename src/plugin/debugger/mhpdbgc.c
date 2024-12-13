@@ -446,7 +446,7 @@ int mhp_usermap_load_gnuld(const char *fname, uint16_t origin)
     }
 
 /*                0x0000000000000600                MEMOFS = (DOS_PSP * 0x10)*/
-    if (index(bytebuf, '='))
+    if (strchr(bytebuf, '='))
       continue;
 
     if (bytebuf[1] != ' ')
