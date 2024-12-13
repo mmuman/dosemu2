@@ -732,7 +732,8 @@ if test "$machine" != "wasm32"; then
   fi
 fi
 
-if test "$enable_asan" = "yes"; then
+if test "$CONFIG_OS" != "Android"; then
+ if test "$enable_asan" = "yes"; then
   AX_CHECK_LINK_FLAG([-fsanitize=address], [
     DOSEMU_CFLAGS="$DOSEMU_CFLAGS -fsanitize=address"
     # working around this bug:
@@ -741,27 +742,28 @@ if test "$enable_asan" = "yes"; then
     LDFLAGS="$LDFLAGS -fsanitize=address -lstdc++"
     AC_MSG_NOTICE(enabling address sanitizer)
   ])
-fi
-if test "$enable_lsan" = "yes"; then
+ fi
+ if test "$enable_lsan" = "yes"; then
   AX_CHECK_LINK_FLAG([-fsanitize=leak], [
     DOSEMU_CFLAGS="$DOSEMU_CFLAGS -fsanitize=leak"
     LDFLAGS="$LDFLAGS -fsanitize=leak"
     AC_MSG_NOTICE(enabling leak sanitizer)
   ])
-fi
-if test "$enable_tsan" = "yes"; then
+ fi
+ if test "$enable_tsan" = "yes"; then
   AX_CHECK_LINK_FLAG([-fsanitize=thread], [
     DOSEMU_CFLAGS="$DOSEMU_CFLAGS -fsanitize=thread"
     LDFLAGS="$LDFLAGS -fsanitize=thread"
     AC_MSG_NOTICE(enabling thread sanitizer)
   ])
-fi
-if test "$enable_ubsan" = "yes"; then
+ fi
+ if test "$enable_ubsan" = "yes"; then
   AX_CHECK_LINK_FLAG([-fsanitize=undefined], [
     DOSEMU_CFLAGS="$DOSEMU_CFLAGS -fsanitize=undefined -fno-sanitize=alignment"
     LDFLAGS="$LDFLAGS -fsanitize=undefined"
     AC_MSG_NOTICE(enabling UB sanitizer)
   ])
+ fi
 fi
 if test "$enable_profile" = "yes"; then
     DOSEMU_CFLAGS="$DOSEMU_CFLAGS -pg -no-pie"
