@@ -123,6 +123,7 @@ FILE *fstream_tee(FILE *orig);
 
 #ifdef __ANDROID__
 #define pthread_cancel(t) pthread_kill(t, SIGKILL)
+#define pthread_setcancelstate(x, y)
 #endif
 
 typedef sem_t *pshared_sem_t;
