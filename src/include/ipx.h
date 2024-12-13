@@ -9,7 +9,6 @@
 #define IPX 1
 #endif
 
-#ifdef IPX
 #include <sys/types.h>
 #include "cpu.h"
 
@@ -115,9 +114,7 @@ typedef struct ipx_socket_struct {
   u_short socket;
   u_short PSP;
   int fd;
-}
-
-ipx_socket_t;
+} ipx_socket_t;
 
 extern void ipx_init(void);
 extern int IPXInt2FHandler(void);
@@ -126,5 +123,4 @@ extern int IPXGetLocalTarget( unsigned long network, int *hops, int *ticks );
 extern void ipx_close(void);
 extern void printIPXHeader(IPXPacket_t * IPXHeader);
 
-#endif
 #endif /* IPX_H */

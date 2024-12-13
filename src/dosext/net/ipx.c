@@ -36,7 +36,6 @@
 #include "ioselect.h"
 #include "ipx_be.h"
 #include "ipx.h"
-#ifdef IPX
 
 #define MAX_PACKET_DATA		1500
 
@@ -928,5 +927,3 @@ void ipx_close(void)
     s = ipx_socket_list;
   }
 }
-
-#endif
