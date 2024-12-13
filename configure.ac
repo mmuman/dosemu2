@@ -139,10 +139,12 @@ if test -z "$AS_LD"; then
 fi
 
 AC_PATH_PROG([OBJCOPY], [objcopy])
-O_VER=`$OBJCOPY -V | head -n 1 | grep "GNU objcopy"`
-if test -z "$O_VER"; then
-  AC_MSG_WARN([rejecting BSD objcopy])
-  OBJCOPY=""
+if test -n "$OBJCOPY"; then
+  O_VER=`$OBJCOPY -V | head -n 1 | grep "GNU objcopy"`
+  if test -z "$O_VER"; then
+    AC_MSG_WARN([rejecting BSD objcopy])
+    OBJCOPY=""
+  fi
 fi
 if test -z "$OBJCOPY"; then
   AC_PATH_PROG([LOBJCOPY], [llvm-objcopy], [], [$PATH${PATH_SEPARATOR}/usr/local/opt/llvm/bin])
