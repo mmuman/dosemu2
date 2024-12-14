@@ -3002,9 +3002,12 @@ static void do_run_cmd(struct lowstring *str, struct ae00_tab *cmd)
     arg0[str->len] = '\0';
     memcpy(cmdbuf, cmd->cmd.s, cmd->cmd.len);
     cmdbuf[cmd->cmd.len] = '\0';
+    NOCARRY;
     rc = run_command_plugin(arg0, NULL, cmdbuf, run_program_ae00, do_get_psp);
     if (rc != 0)
-	_AL = 0xff;
+	_AL = 0xff; // built-in
+    if (rc < 0)
+	CARRY;
 }
 
 static int int2f(int stk_offs, int revect)
