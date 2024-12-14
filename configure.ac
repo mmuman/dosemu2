@@ -23,6 +23,7 @@ AC_USE_SYSTEM_EXTENSIONS
 AC_PREFIX_DEFAULT([${PREFIX:-/usr}/local])
 if test -n "$PREFIX"; then
   LDFLAGS="$LDFLAGS -L${ac_default_prefix}/lib"
+  export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${ac_default_prefix}/lib/pkgconfig:${ac_default_prefix}/share/pkgconfig"
 fi
 if test "x$prefix" != "xNONE"; then
   LDFLAGS="$LDFLAGS -L${prefix}/lib"
