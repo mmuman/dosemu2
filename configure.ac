@@ -312,19 +312,6 @@ AC_CHECK_FUNCS([statfs])
 # memfd_create is linkable on android, but may not be declared, so re-check
 AC_CHECK_DECLS([memfd_create],,, [[#include <sys/mman.h>]])
 
-AC_CHECK_FUNC(sem_open,, [
-  AC_MSG_ERROR(sem_open function missing.)
-])
-AC_MSG_CHECKING([for working sem_open])
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <semaphore.h>]], [[
-  sem_open("", 0);
-]])], [
-  AC_MSG_RESULT([yes])
-], [
-  AC_MSG_RESULT([no])
-  AC_CHECK_LIB(android-posix-semaphore, libandroid_sem_open)
-])
-
 AC_CHECK_DECLS([F_OFD_SETLK], [
     USE_OFD_LOCKS=1
     AC_SUBST(USE_OFD_LOCKS)
@@ -475,6 +462,20 @@ AC_CHECK_LIB(pthread, pthread_create,, [
 
 AC_CHECK_FUNCS([pthread_getname_np pthread_setname_np])
 AC_CHECK_FUNCS([pthread_attr_setsigmask_np pthread_setattr_default_np])
+
+# sem_open is also in pthread lib
+AC_CHECK_FUNC(sem_open,, [
+  AC_MSG_ERROR(sem_open function missing.)
+])
+AC_MSG_CHECKING([for working sem_open])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <semaphore.h>]], [[
+  sem_open("", 0);
+]])], [
+  AC_MSG_RESULT([yes])
+], [
+  AC_MSG_RESULT([no])
+  AC_CHECK_LIB(android-posix-semaphore, libandroid_sem_open)
+])
 
 AC_CHECK_HEADERS([scsi/sg.h linux/cdrom.h sys/io.h])
 AC_CHECK_HEADERS([netipx/ipx.h linux/ipx.h netpacket/packet.h])
