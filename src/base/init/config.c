@@ -467,6 +467,7 @@ static void set_freedos_dir(void)
   const char *xdirs[] = {
     "/usr/share/dosemu2-extras",
     "/usr/local/share/dosemu2-extras",
+    PREFIX "/share/dosemu2-extras",
     "/opt/dosemu2-extras",			/* gentoo */
     NULL,
   };
@@ -514,6 +515,7 @@ static void set_freedos_dir(void)
 #endif
       "/usr/share/comcom32",
       "/usr/local/share/comcom32",
+      PREFIX "/share/comcom32",
       "/opt/comcom32",			/* gentoo */
       NULL,
     };
