@@ -217,6 +217,7 @@ static void pty_thr(void)
 #define MAX_LEN (1024+1)
     char buf[MAX_LEN];
     int rd, wr;
+    int done = 0;
     struct char_set_state kstate;
     struct char_set_state dstate;
 
@@ -243,9 +244,12 @@ static void pty_thr(void)
 			break;
 		    com_doswritecon(buf2, rc);
 		}
+		continue;
 	}
-	if (__atomic_load_n(&pty_done, __ATOMIC_RELAXED))
+	if (done)
 	    break;
+	if ((done = __atomic_load_n(&pty_done, __ATOMIC_RELAXED)))
+	    continue;  // last re-check
 
 	wr = com_dosreadcon(buf, sizeof(buf) - 1);
 	if (wr > 0)
