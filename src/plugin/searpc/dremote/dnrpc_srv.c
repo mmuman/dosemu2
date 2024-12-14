@@ -39,8 +39,8 @@
 static int sock_rx;
 static int exiting;
 
-static int mmap_1_svc(uint64_t addr, uint64_t length, int prot, int flags,
-        uint64_t offset, GError **error)
+static int mmap_1_svc(gint64 addr, gint64 length, int prot, int flags,
+        gint64 offset, GError **error)
 {
     void *targ = (void *)(uintptr_t)addr;
     int fd = recv_fd(sock_rx);
@@ -58,13 +58,13 @@ static int mmap_1_svc(uint64_t addr, uint64_t length, int prot, int flags,
     return uffd_reattach(targ, length);
 }
 
-static int mprotect_1_svc(uint64_t addr, uint64_t length, int prot,
+static int mprotect_1_svc(gint64 addr, gint64 length, int prot,
         GError **error)
 {
     return mprotect((void *)(uintptr_t)addr, length, prot);
 }
 
-static int madvise_1_svc(uint64_t addr, uint64_t length, int flags,
+static int madvise_1_svc(gint64 addr, gint64 length, int flags,
         GError **error)
 {
     return madvise((void *)(uintptr_t)addr, length, flags);

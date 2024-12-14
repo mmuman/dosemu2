@@ -148,7 +148,8 @@ static int path_ok(int idx, const char *path)
   ret->errn = errno; \
 } while (0)
 
-static GObject* open_1_svc(int idx, char *path, int flags, GError **error)
+static GObject* open_1_svc(int idx, const char *path, int flags,
+        GError **error)
 {
     int fd;
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
@@ -160,7 +161,7 @@ static GObject* open_1_svc(int idx, char *path, int flags, GError **error)
     return G_OBJECT(ret);
 }
 
-static GObject* creat_1_svc(int idx, char *path, int flags, int mode,
+static GObject* creat_1_svc(int idx, const char *path, int flags, int mode,
         GError **error)
 {
     int fd;
@@ -174,7 +175,7 @@ static GObject* creat_1_svc(int idx, char *path, int flags, int mode,
     return G_OBJECT(ret);
 }
 
-static GObject* unlink_1_svc(int idx, char *path, GError **error)
+static GObject* unlink_1_svc(int idx, const char *path, GError **error)
 {
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
     ASSERT_P(path_ok(idx, path));
@@ -182,7 +183,8 @@ static GObject* unlink_1_svc(int idx, char *path, GError **error)
     return G_OBJECT(ret);
 }
 
-static GObject* setxattr_1_svc(int idx, char *path, int attr, GError **error)
+static GObject* setxattr_1_svc(int idx, const char *path, int attr,
+        GError **error)
 {
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
     ASSERT_P(path_ok(idx, path));
@@ -190,7 +192,7 @@ static GObject* setxattr_1_svc(int idx, char *path, int attr, GError **error)
     return G_OBJECT(ret);
 }
 
-static GObject* getxattr_1_svc(int idx, char *path, GError **error)
+static GObject* getxattr_1_svc(int idx, const char *path, GError **error)
 {
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
     ASSERT_P(path_ok(idx, path));
@@ -198,8 +200,8 @@ static GObject* getxattr_1_svc(int idx, char *path, GError **error)
     return G_OBJECT(ret);
 }
 
-static GObject* rename_1_svc(int idx1, char *oldpath, int idx2, char *newpath,
-        GError **error)
+static GObject* rename_1_svc(int idx1, const char *oldpath, int idx2,
+        const char *newpath, GError **error)
 {
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
     ASSERT_P2(path_ok(idx1, oldpath));
@@ -208,7 +210,8 @@ static GObject* rename_1_svc(int idx1, char *oldpath, int idx2, char *newpath,
     return G_OBJECT(ret);
 }
 
-static GObject* mkdir_1_svc(int idx, char *path, int mode, GError **error)
+static GObject* mkdir_1_svc(int idx, const char *path, int mode,
+        GError **error)
 {
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
     ASSERT_P(path_ok(idx, path));
@@ -216,7 +219,7 @@ static GObject* mkdir_1_svc(int idx, char *path, int mode, GError **error)
     return G_OBJECT(ret);
 }
 
-static GObject* rmdir_1_svc(int idx, char *path, GError **error)
+static GObject* rmdir_1_svc(int idx, const char *path, GError **error)
 {
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
     ASSERT_P(path_ok(idx, path));
@@ -224,8 +227,8 @@ static GObject* rmdir_1_svc(int idx, char *path, GError **error)
     return G_OBJECT(ret);
 }
 
-static GObject* utime_1_svc(int idx, char *path, uint64_t atime,
-        uint64_t mtime, GError **error)
+static GObject* utime_1_svc(int idx, const char *path, gint64 atime,
+        gint64 mtime, GError **error)
 {
     struct utimbuf ut = { .actime = atime, .modtime = mtime };
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
@@ -234,7 +237,7 @@ static GObject* utime_1_svc(int idx, char *path, uint64_t atime,
     return G_OBJECT(ret);
 }
 
-static int path_ok_1_svc(int idx, char *path, GError **error)
+static int path_ok_1_svc(int idx, const char *path, GError **error)
 {
     return path_ok(idx, path);
 }
@@ -275,8 +278,8 @@ static int shm_unlink_1_svc(const char *name, GError **error)
 #endif
 }
 
-int fsrpc_srv_init(const char *svc_name, int fd, plist_idx_t pi, setattr_t sa,
-        getattr_t ga)
+int fsrpc_srv_init(const char *svc_name, int fd, plist_idx_t pi,
+        setattr_t sa, getattr_t ga)
 {
     sock_tx = fd;
     plist_idx_cb = pi;
@@ -317,7 +320,7 @@ int fsrpc_srv_init(const char *svc_name, int fd, plist_idx_t pi, setattr_t sa,
     searpc_server_register_function(svc_name, exit_1_svc, "exit_1",
             searpc_signature_int__void());
     searpc_server_register_function(svc_name, shm_open_1_svc, "shm_open_1",
-            searpc_signature_int__string_int_int());
+            searpc_signature_object__string_int_int());
     searpc_server_register_function(svc_name, shm_unlink_1_svc, "shm_unlink_1",
             searpc_signature_int__string());
     return 0;
