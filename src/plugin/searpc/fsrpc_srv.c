@@ -47,7 +47,7 @@ static int exiting;
 
 #define ASSERT0(x) do {if (!(x)) { return -1; }} while(0)
 
-static int add_path_1_svc(const char *path)
+static int add_path_1_svc(const char *path, GError **error)
 {
     int len;
 
@@ -67,7 +67,7 @@ static int add_path_1_svc(const char *path)
     return num_paths++;
 }
 
-static int add_path_ex_1_svc(const char *path)
+static int add_path_ex_1_svc(const char *path, GError **error)
 {
     int len;
 
@@ -79,14 +79,14 @@ static int add_path_ex_1_svc(const char *path)
     return 0;
 }
 
-static int add_path_list_1_svc(const char *clist)
+static int add_path_list_1_svc(const char *clist, GError **error)
 {
     ASSERT0(!sealed);
     plist = strdup(clist);
     return 0;
 }
 
-static int seal_1_svc(void)
+static int seal_1_svc(GError **error)
 {
     ASSERT0(!sealed);
     sealed = 1;
@@ -148,7 +148,7 @@ static int path_ok(int idx, const char *path)
   ret->errn = errno; \
 } while (0)
 
-static GObject* open_1_svc(int idx, char *path, int flags)
+static GObject* open_1_svc(int idx, char *path, int flags, GError **error)
 {
     int fd;
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
@@ -160,7 +160,8 @@ static GObject* open_1_svc(int idx, char *path, int flags)
     return G_OBJECT(ret);
 }
 
-static GObject* creat_1_svc(int idx, char *path, int flags, int mode)
+static GObject* creat_1_svc(int idx, char *path, int flags, int mode,
+        GError **error)
 {
     int fd;
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
@@ -173,7 +174,7 @@ static GObject* creat_1_svc(int idx, char *path, int flags, int mode)
     return G_OBJECT(ret);
 }
 
-static GObject* unlink_1_svc(int idx, char *path)
+static GObject* unlink_1_svc(int idx, char *path, GError **error)
 {
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
     ASSERT_P(path_ok(idx, path));
@@ -181,7 +182,7 @@ static GObject* unlink_1_svc(int idx, char *path)
     return G_OBJECT(ret);
 }
 
-static GObject* setxattr_1_svc(int idx, char *path, int attr)
+static GObject* setxattr_1_svc(int idx, char *path, int attr, GError **error)
 {
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
     ASSERT_P(path_ok(idx, path));
@@ -189,7 +190,7 @@ static GObject* setxattr_1_svc(int idx, char *path, int attr)
     return G_OBJECT(ret);
 }
 
-static GObject* getxattr_1_svc(int idx, char *path)
+static GObject* getxattr_1_svc(int idx, char *path, GError **error)
 {
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
     ASSERT_P(path_ok(idx, path));
@@ -197,7 +198,8 @@ static GObject* getxattr_1_svc(int idx, char *path)
     return G_OBJECT(ret);
 }
 
-static GObject* rename_1_svc(int idx1, char *oldpath, int idx2, char *newpath)
+static GObject* rename_1_svc(int idx1, char *oldpath, int idx2, char *newpath,
+        GError **error)
 {
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
     ASSERT_P2(path_ok(idx1, oldpath));
@@ -206,7 +208,7 @@ static GObject* rename_1_svc(int idx1, char *oldpath, int idx2, char *newpath)
     return G_OBJECT(ret);
 }
 
-static GObject* mkdir_1_svc(int idx, char *path, int mode)
+static GObject* mkdir_1_svc(int idx, char *path, int mode, GError **error)
 {
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
     ASSERT_P(path_ok(idx, path));
@@ -214,7 +216,7 @@ static GObject* mkdir_1_svc(int idx, char *path, int mode)
     return G_OBJECT(ret);
 }
 
-static GObject* rmdir_1_svc(int idx, char *path)
+static GObject* rmdir_1_svc(int idx, char *path, GError **error)
 {
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
     ASSERT_P(path_ok(idx, path));
@@ -223,7 +225,7 @@ static GObject* rmdir_1_svc(int idx, char *path)
 }
 
 static GObject* utime_1_svc(int idx, char *path, uint64_t atime,
-        uint64_t mtime)
+        uint64_t mtime, GError **error)
 {
     struct utimbuf ut = { .actime = atime, .modtime = mtime };
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
@@ -232,12 +234,12 @@ static GObject* utime_1_svc(int idx, char *path, uint64_t atime,
     return G_OBJECT(ret);
 }
 
-static int path_ok_1_svc(int idx, char *path)
+static int path_ok_1_svc(int idx, char *path, GError **error)
 {
     return path_ok(idx, path);
 }
 
-static int exit_1_svc(void)
+static int exit_1_svc(GError **error)
 {
     int i;
 
@@ -248,7 +250,8 @@ static int exit_1_svc(void)
     return 0;
 }
 
-static GObject* shm_open_1_svc(const char *name, int oflag, int mode)
+static GObject* shm_open_1_svc(const char *name, int oflag, int mode,
+        GError **error)
 {
     int fd;
     TestObject *ret = g_object_new (TEST_OBJECT_TYPE, NULL);
@@ -263,7 +266,7 @@ static GObject* shm_open_1_svc(const char *name, int oflag, int mode)
     return G_OBJECT(ret);
 }
 
-static int shm_unlink_1_svc(const char *name)
+static int shm_unlink_1_svc(const char *name, GError **error)
 {
 #ifdef HAVE_SHM_OPEN
     return shm_unlink(name);

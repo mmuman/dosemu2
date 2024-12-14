@@ -40,7 +40,7 @@ static int sock_rx;
 static int exiting;
 
 static int mmap_1_svc(uint64_t addr, uint64_t length, int prot, int flags,
-        uint64_t offset)
+        uint64_t offset, GError **error)
 {
     void *targ = (void *)(uintptr_t)addr;
     int fd = recv_fd(sock_rx);
@@ -58,29 +58,31 @@ static int mmap_1_svc(uint64_t addr, uint64_t length, int prot, int flags,
     return uffd_reattach(targ, length);
 }
 
-static int mprotect_1_svc(uint64_t addr, uint64_t length, int prot)
+static int mprotect_1_svc(uint64_t addr, uint64_t length, int prot,
+        GError **error)
 {
     return mprotect((void *)(uintptr_t)addr, length, prot);
 }
 
-static int madvise_1_svc(uint64_t addr, uint64_t length, int flags)
+static int madvise_1_svc(uint64_t addr, uint64_t length, int flags,
+        GError **error)
 {
     return madvise((void *)(uintptr_t)addr, length, flags);
 }
 
-static int setup_1_svc(void)
+static int setup_1_svc(GError **error)
 {
     return dnops->setup();
 }
 
-static int done_1_svc(void)
+static int done_1_svc(GError **error)
 {
     dnops->done();
     exiting++;
     return 0;
 }
 
-static int control_1_svc(void)
+static int control_1_svc(GError **error)
 {
     cpuctx_t scp;
     int ret;
@@ -91,7 +93,7 @@ static int control_1_svc(void)
     return ret;
 }
 
-static int exit_1_svc(void)
+static int exit_1_svc(GError **error)
 {
     cpuctx_t scp;
     int ret;
@@ -102,22 +104,22 @@ static int exit_1_svc(void)
     return ret;
 }
 
-static int read_ldt_1_svc(int bytecount)
+static int read_ldt_1_svc(int bytecount, GError **error)
 {
     return dnops->read_ldt(rpc_shared_page, bytecount);
 }
 
-static int write_ldt_1_svc(int bytecount)
+static int write_ldt_1_svc(int bytecount, GError **error)
 {
     return dnops->write_ldt(rpc_shared_page, bytecount);
 }
 
-static int check_verr_1_svc(int selector)
+static int check_verr_1_svc(int selector, GError **error)
 {
     return dnops->check_verr(selector);
 }
 
-static int debug_breakpoint_1_svc(int op, int err)
+static int debug_breakpoint_1_svc(int op, int err, GError **error)
 {
     cpuctx_t scp;
     int ret;
