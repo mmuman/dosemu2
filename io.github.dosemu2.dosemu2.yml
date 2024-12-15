@@ -42,9 +42,9 @@ modules:
   - name: fdpp
     buildsystem: simple
     build-commands:
-      - make -j ${FLATPAK_BUILDER_N_JOBS} PREFIX=${FLATPAK_DEST} \
+      - make -j ${FLATPAK_BUILDER_N_JOBS} prefix=${FLATPAK_DEST} \
           CROSS_LD=i686-unknown-linux-gnu-ld
-      - make install PREFIX=${FLATPAK_DEST}
+      - make install prefix=${FLATPAK_DEST}
     build-options:
       append-path: /usr/lib/sdk/llvm18/bin:/usr/lib/sdk/toolchain-i386/bin
       prepend-ld-library-path: /usr/lib/sdk/llvm18/lib
@@ -70,8 +70,8 @@ modules:
   - name: djstub
     buildsystem: simple
     build-commands:
-      - make -j ${FLATPAK_BUILDER_N_JOBS} PREFIX=${FLATPAK_DEST}
-      - make install PREFIX=${FLATPAK_DEST}
+      - make -j ${FLATPAK_BUILDER_N_JOBS} prefix=${FLATPAK_DEST}
+      - make install prefix=${FLATPAK_DEST}
     sources:
       - type: git
         url: https://github.com/stsp/djstub.git
@@ -91,8 +91,8 @@ modules:
   - name: dj64dev
     buildsystem: simple
     build-commands:
-      - make PREFIX=${FLATPAK_DEST} CROSS_PREFIX=i686-unknown-linux-gnu-
-      - make install PREFIX=${FLATPAK_DEST}
+      - make prefix=${FLATPAK_DEST} CROSS_PREFIX=i686-unknown-linux-gnu-
+      - make install prefix=${FLATPAK_DEST}
     sources:
       - type: git
         url: https://github.com/stsp/dj64dev.git
@@ -104,9 +104,9 @@ modules:
   - name: comcom64
     buildsystem: simple
     build-commands:
-      - make -j ${FLATPAK_BUILDER_N_JOBS} PREFIX=${FLATPAK_DEST} \
+      - make -j ${FLATPAK_BUILDER_N_JOBS} prefix=${FLATPAK_DEST} \
           CROSS_PREFIX=i686-unknown-linux-gnu-
-      - make install PREFIX=${FLATPAK_DEST}
+      - make install prefix=${FLATPAK_DEST}
     sources:
       - type: git
         url: https://github.com/dosemu2/comcom64.git
