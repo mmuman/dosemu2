@@ -73,4 +73,12 @@ for i in test_*.*.*.log ; do
   test -f $i || exit 0
 done
 
+# If we get here, then we've failed so copy various system logs, give them
+# a name that is picked up by the artefact uploaded.
+[ -f /var/log/audit/audit.log ] && sudo cp /var/log/audit/audit.log test_audit.log
+[ -f /var/log/syslog ] && sudo cp /var/log/syslog test_syslog.log
+[ -f /var/log/auth.log ] && sudo cp /var/log/auth.log test_auth.log
+
+sudo chmod 644 test_*.log
+
 exit 1
