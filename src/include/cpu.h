@@ -366,6 +366,10 @@ static inline void savefpstate_legacy(emu_fpstate *buf)
 #define set_CF() (_EFLAGS |= CF)
 #define clear_CF() (_EFLAGS &= ~CF)
 #define isset_CF() ((_EFLAGS & CF) != 0)
+       /* sign flag */
+#define set_SF() (_EFLAGS |= SF)
+#define clear_SF() (_EFLAGS &= ~SF)
+#define isset_SF() ((_EFLAGS & SF) != 0)
        /* zero flag */
 #define set_ZF() (_EFLAGS |= ZF)
 #define clear_ZF() (_EFLAGS &= ~ZF)

@@ -2992,7 +2992,7 @@ static unsigned short do_get_psp(int parent)
     return sda_cur_psp(sda);
 }
 
-static void do_run_cmd(struct lowstring *str, struct ae00_tab *cmd)
+static int do_run_cmd(struct lowstring *str, struct ae00_tab *cmd)
 {
     char arg0[256];
     char cmdbuf[256];
@@ -3008,6 +3008,7 @@ static void do_run_cmd(struct lowstring *str, struct ae00_tab *cmd)
 	_AL = 0xff; // built-in
     if (rc < 0)
 	CARRY;
+    return rc;
 }
 
 static int int2f(int stk_offs, int revect)
@@ -3048,7 +3049,8 @@ static int int2f(int stk_offs, int revect)
 	    psp_seg = sda_cur_psp(sda);
 	    if (!psp_seg)
 		break;
-	    do_run_cmd(str, cmd);
+	    if (do_run_cmd(str, cmd) != 0)
+		return I_HANDLED;
 	    mcb = (struct MCB *) SEG2UNIX(psp_seg - 1);
 	    if (!mcb)
 		break;
@@ -3419,6 +3421,7 @@ static void do_int_from_hlt(Bit16u i, HLT_ARG(arg))
 static void do_rvc_chain(int i, int stk_offs)
 {
     int ret = run_caller_func(i, REVECT, stk_offs);
+    clear_SF();
     switch (ret) {
     case I_SECOND_REVECT:
 	di_printf("int_rvc 0x%02x setup\n", i);
@@ -3427,6 +3430,7 @@ static void do_rvc_chain(int i, int stk_offs)
 	     * unsupported functions it will stay unchanged */
 	    CARRY;
 	}
+	set_SF();
 	/* no break */
     case I_NOT_HANDLED:
 	di_printf("int 0x%02x, ax=0x%04x\n", i, LWORD(eax));
