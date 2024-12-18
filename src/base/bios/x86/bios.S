@@ -503,7 +503,7 @@ int_rvc_disp_cs_\inum:
 	movw %ax,(%esp)
 	popl %eax
 	jnz 9f			/* handled */
-	jc 2f			/* second_revect */
+	js 2f			/* second_revect */
 	pushw 4(%esp)
 	andw $0xff,(%esp)
 	popfw			/* re-sync flags */

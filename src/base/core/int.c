@@ -3421,6 +3421,7 @@ static void do_int_from_hlt(Bit16u i, HLT_ARG(arg))
 static void do_rvc_chain(int i, int stk_offs)
 {
     int ret = run_caller_func(i, REVECT, stk_offs);
+    clear_SF();
     switch (ret) {
     case I_SECOND_REVECT:
 	di_printf("int_rvc 0x%02x setup\n", i);
@@ -3429,6 +3430,7 @@ static void do_rvc_chain(int i, int stk_offs)
 	     * unsupported functions it will stay unchanged */
 	    CARRY;
 	}
+	set_SF();
 	/* no break */
     case I_NOT_HANDLED:
 	di_printf("int 0x%02x, ax=0x%04x\n", i, LWORD(eax));
