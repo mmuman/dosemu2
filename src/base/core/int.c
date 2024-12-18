@@ -2992,7 +2992,7 @@ static unsigned short do_get_psp(int parent)
     return sda_cur_psp(sda);
 }
 
-static void do_run_cmd(struct lowstring *str, struct ae00_tab *cmd)
+static int do_run_cmd(struct lowstring *str, struct ae00_tab *cmd)
 {
     char arg0[256];
     char cmdbuf[256];
@@ -3008,6 +3008,7 @@ static void do_run_cmd(struct lowstring *str, struct ae00_tab *cmd)
 	_AL = 0xff; // built-in
     if (rc < 0)
 	CARRY;
+    return rc;
 }
 
 static int int2f(int stk_offs, int revect)
@@ -3048,7 +3049,8 @@ static int int2f(int stk_offs, int revect)
 	    psp_seg = sda_cur_psp(sda);
 	    if (!psp_seg)
 		break;
-	    do_run_cmd(str, cmd);
+	    if (do_run_cmd(str, cmd) != 0)
+		return I_HANDLED;
 	    mcb = (struct MCB *) SEG2UNIX(psp_seg - 1);
 	    if (!mcb)
 		break;
