@@ -3016,6 +3016,8 @@ static int do_run_cmd(struct lowstring *str, struct ae00_tab *cmd)
 
 static int int2f(int stk_offs, int revect)
 {
+    int ret = I_NOT_HANDLED;
+
     reset_idle(0);
 #if 1
     ds_printf
@@ -3053,7 +3055,7 @@ static int int2f(int stk_offs, int revect)
 	    if (!psp_seg)
 		break;
 	    if (do_run_cmd(str, cmd) != 0)
-		return I_HANDLED;
+		ret = I_HANDLED;
 	    mcb = (struct MCB *) SEG2UNIX(psp_seg - 1);
 	    if (!mcb)
 		break;
@@ -3079,12 +3081,12 @@ hint_done:
 	    tmp_ptr = ptr;
 	    while (*tmp_ptr) {	/* Check whether the name is valid */
 		if (iscntrlDOS(*tmp_ptr++))
-		    return 0;
+		    return ret;
 	    }
 	    strcpy(title_current, title_hint);
 	    if (!ptr[0]) {
 		change_window_title(title_current);
-		return 0;
+		return ret;
 	    }
 	    snprintf(appname, sizeof(appname), "%s ( %s )",
 		     title_current, strlowerDOS(ptr));
@@ -3304,7 +3306,7 @@ hint_done:
 	break;
     }
 
-    return 0;
+    return ret;
 }
 
 static void int33_check_hog(void);
