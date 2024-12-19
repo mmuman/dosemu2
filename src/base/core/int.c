@@ -257,7 +257,10 @@ static void revect_helper(int stk_offs)
 	LWORD(edx) = HWORD(edx);
 	HWORD(edx) = 0;
 	di_printf("int_rvc 0x%02x, doing second revect call\n", inum);
-	run_secrevect_func(inum, old_ax, old_flags);
+	if (int_handlers[inum].secrevect_function)
+		run_secrevect_func(inum, old_ax, old_flags);
+	else
+		error("no secrevec function for %x\n", inum);
 	break;
     case DOS_SUBHELPER_RVC_NEXT_VEC: {
 	int start = (ah == 0xff ? 0 : ah + 1);
