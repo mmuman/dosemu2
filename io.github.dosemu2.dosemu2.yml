@@ -95,7 +95,7 @@ modules:
         url: https://github.com/stsp/dj64dev.git
         branch: master
       - type: script
-        commands: ['autoreconf -v -i']
+        commands: ['autoreconf -v -i -I m4']
     no-parallel-make: true
     builddir: false
     cleanup:
