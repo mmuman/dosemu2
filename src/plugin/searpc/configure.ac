@@ -50,8 +50,6 @@ if test "$nok" != "1"; then
 fi
 if test "$nok" != "1"; then
   AC_MSG_RESULT([ok])
-else
-  AC_MSG_RESULT([unsuitable])
 fi
 if test "$nok" != "1"; then
   PKG_CHECK_MODULES([SECCOMP], [libseccomp],,
