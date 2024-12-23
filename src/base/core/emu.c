@@ -105,7 +105,7 @@ static int leavedos_called;
 static pthread_mutex_t ld_mtx = PTHREAD_MUTEX_INITIALIZER;
 __TLS union vm86_union vm86u;
 
-volatile __thread int fault_cnt;
+volatile int fault_cnt;
 volatile int in_vm86;
 int terminal_pipe;
 int terminal_fd = -1;

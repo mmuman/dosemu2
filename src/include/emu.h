@@ -58,7 +58,7 @@ extern __TLS union vm86_union vm86u;
 #define vm86s (vm86u.vm86ps)
 
 int signal_pending(void);
-extern volatile __thread int fault_cnt;
+extern volatile int fault_cnt;
 extern int terminal_pipe;
 extern int terminal_fd;
 extern int kernel_version_code;
