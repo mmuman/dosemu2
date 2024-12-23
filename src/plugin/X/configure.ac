@@ -9,10 +9,9 @@ AC_MSG_NOTICE(Compiling with X support...)
 
 dnl Check for the MITSHM extention to speed up VGAemu
 PKG_CHECK_MODULES([XEXT], [xext],
-     [
-       AC_DEFINE(HAVE_MITSHM,1)
-     ],
-     AC_MSG_NOTICE(Compiling without the MITSHM X extension))
+    [
+      AC_CHECK_HEADER([sys/shm.h], [ AC_DEFINE(HAVE_MITSHM, 1) ])
+    ],AC_MSG_NOTICE(Compiling without the MITSHM X extension))
 
 AC_ARG_ENABLE(vidmode,
           [  --enable-vidmode        use XF86 vidmode extension])
