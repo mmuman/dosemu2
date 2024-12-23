@@ -19,7 +19,9 @@ PKG_CHECK_MODULES([SEARPC], [libsearpc], [
 
 AC_PATH_PROGS([RPCGEN], [searpc-codegen searpc-codegen.py])
 if test -z "$RPCGEN"; then
-  AC_MSG_ERROR(searpc-codegen not found)
+  AC_MSG_WARN(searpc-codegen not found)
+  cp sr_bkp/*.h .
+  cp sr_bkp/dremote/*.h dremote
 fi
 AC_SUBST(RPCGEN)
 
