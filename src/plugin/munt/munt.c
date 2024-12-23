@@ -25,7 +25,7 @@
 #include <string.h>
 #include <limits.h>
 #include <mt32emu/c_interface/c_interface.h>
-#ifdef __APPLE__ /* to redefine sem_init() and related functions */
+#if defined(__APPLE__) || defined(__ANDROID__) /* to redefine sem_init() and related functions */
 #include "utilities.h"
 #else
 #include <semaphore.h>

@@ -25,7 +25,9 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
+#if defined(__APPLE__) || defined(__ANDROID__) /* to redefine sem_init() and related functions */
 #include "utilities.h"
+#endif
 #include "fssvc.h"
 #include "fslib_ops.h"
 

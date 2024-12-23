@@ -90,6 +90,9 @@
 
 #include "types.h"
 #include "timers.h"
+#if defined(__APPLE__) || defined(__ANDROID__) /* to redefine sem_init() and related functions */
+#include "utilities.h"
+#endif
 
 /* from linux/version.h */
 #define JOY_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))

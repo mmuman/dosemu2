@@ -51,7 +51,9 @@
 #include "bitops.h"
 #include "pic.h"
 #include "emudpmi.h"
+#if defined(__APPLE__) || defined(__ANDROID__) /* to redefine sem_init() and related functions */
 #include "utilities.h"
+#endif
 #include "ioselect.h"
 
 #ifdef USE_MHPDBG

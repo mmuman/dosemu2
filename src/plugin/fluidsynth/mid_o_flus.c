@@ -32,7 +32,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <fluidsynth.h>
-#ifdef __APPLE__ /* to redefine sem_init() and related functions */
+#if defined(__APPLE__) || defined(__ANDROID__) /* to redefine sem_init() and related functions */
 #include "utilities.h"
 #else
 #include <semaphore.h>
