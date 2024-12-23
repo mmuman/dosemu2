@@ -796,9 +796,13 @@ if test "$enable_optimization" = "no" ; then
     AC_MSG_NOTICE(optimization set to -O0)
   fi
 else
-  DOSEMU_CFLAGS="$DOSEMU_CFLAGS -flto=auto -O2"
-  DOSEMU_LDFLAGS="$DOSEMU_LDFLAGS -flto=auto -O2"
+  DOSEMU_CFLAGS="$DOSEMU_CFLAGS -O2"
   AC_MSG_NOTICE(optimization set to -O2)
+  AC_ARG_ENABLE(lto, AS_HELP_STRING([--disable-lto], [disable LTO]))
+  if test "$enable_lto" != "no" ; then
+    DOSEMU_CFLAGS="$DOSEMU_CFLAGS -flto=auto"
+    DOSEMU_LDFLAGS="$DOSEMU_LDFLAGS -flto=auto -O2"
+  fi
 fi
 
 DOSEMU_CFLAGS="${DOSEMU_CFLAGS} ${OPT} ${PIPE}"
