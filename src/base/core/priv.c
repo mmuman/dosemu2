@@ -33,7 +33,9 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <grp.h>
+#ifdef HAVE_LIBCAP
 #include <sys/capability.h>
+#endif
 #include <limits.h>
 #ifdef HAVE_SYS_IO_H
 #include <sys/io.h>
@@ -191,6 +193,7 @@ void priv_drop_root(void)
 
 static int caps_present(void)
 {
+#ifdef HAVE_LIBCAP
     int rc;
     cap_t cap, ecap;
 
@@ -206,10 +209,14 @@ static int caps_present(void)
     cap_free(cap);
     cap_free(ecap);
     return rc;
+#else
+    return 0;
+#endif
 }
 
 static int drop_caps(void)
 {
+#ifdef HAVE_LIBCAP
     int rc;
     cap_t cap;
 
@@ -220,6 +227,9 @@ static int drop_caps(void)
     rc = cap_set_proc(cap);
     cap_free(cap);
     return rc;
+#else
+    return 0;
+#endif
 }
 
 int priv_drop(void)
@@ -242,6 +252,7 @@ int priv_drop(void)
 
 static void init_groups(uid_t uid, gid_t gid)
 {
+#ifdef HAVE_LIBCAP
   int err;
   struct passwd *pw = getpwuid(uid);
   if (!pw) {
@@ -256,6 +267,7 @@ static void init_groups(uid_t uid, gid_t gid)
     err = cap_setgroups(gid, ng, groups);
     assert(!err);
   }
+#endif
 }
 
 void priv_drop_total(void)
