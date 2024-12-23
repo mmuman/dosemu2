@@ -457,6 +457,12 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 AX_RESTORE_FLAGS([attr_check])
 AC_DEFINE_UNQUOTED(SIG_PROTO_PFX, $SIG_PROTO_PFX)
 
+AC_CHECK_FUNC(globfree,, [
+  AC_CHECK_LIB(android-glob, globfree,, [
+    AC_MSG_ERROR(globfree function missing.)
+  ])
+])
+
 dnl Check whether we have pthreads and whether to use it
 AC_CHECK_LIB(pthread, pthread_create,, [
   dnl see if the func is provided nevertheless (not needing -lpthread)
