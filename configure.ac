@@ -845,7 +845,7 @@ if test -z "$VID_PLU"; then
   AC_MSG_RESULT()
   AC_MSG_WARN([No video plugins available!])
 fi
-AUD_PLU=`echo $PLUGINS | $SED 's/ /\n/g' | $EGREP -x 'sdl|ao|sdl1'`
+AUD_PLU=`echo $PLUGINS | $SED 's/ /\n/g' | $EGREP -x 'sdl|libao|sdl1'`
 if test -z "$AUD_PLU"; then
   AC_MSG_RESULT()
   AC_MSG_WARN([No audio plugins available!])
