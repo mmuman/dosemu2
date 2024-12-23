@@ -686,8 +686,29 @@ if test "$enable_cpuemu" != "no"; then
   X86_EMULATOR=1
   AC_SUBST(X86_EMULATOR)
 
+  AC_MSG_CHECKING([for __attribute__((optimize("omit-frame-pointer")))])
+  AX_SAVE_FLAGS([attr2_check])
+  CFLAGS="-Wall -Werror -fno-omit-frame-pointer"
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+	void foo(void);
+	__attribute__((optimize("omit-frame-pointer")))
+	void foo(void)
+	{
+	}
+    ])],
+    [
+	AC_MSG_RESULT([supported])
+	OMIT_FP=1
+    ],
+    [
+	AC_MSG_RESULT([unsupported])
+	OMIT_FP=0
+    ]
+  )
+  AX_RESTORE_FLAGS([attr2_check])
+
   if test "$machine" = "i386" -o "$machine" = "x86_64"; then
-   if test "$CONFIG_OS" != "Android"; then
+   if test "$CONFIG_OS" != "Android" -a "$OMIT_FP" = "1"; then
     AC_ARG_ENABLE(cpuemu_jit, [AS_HELP_STRING([--disable-cpuemu-jit],
         [do NOT compile with optional x86 JIT])])
     if test "$enable_cpuemu_jit" != "no"; then
