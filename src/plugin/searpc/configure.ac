@@ -3,6 +3,9 @@ AC_INIT
 AC_CONFIG_HEADERS([_searpc_config.h])
 AC_CONFIG_FILES([Makefile.conf])
 
+# for dumpmachine
+AC_PROG_CC
+
 PKG_CHECK_MODULES([GLIB2], [glib-2.0], [
     CFLAGS="$CFLAGS $GLIB2_CFLAGS"
     LIBS="$LIBS $GLIB2_LIBS"
@@ -28,7 +31,7 @@ AC_SUBST(RPCGEN)
 AC_MSG_CHECKING([for remote DPMI-compatible host])
 CONFIG_HOST=`uname -s`
 CONFIG_OS=`uname -o`
-machine=`cc -dumpmachine | cut -d- -f1 | sed 's/i.86/i386/'`
+machine=`$CC -dumpmachine | cut -d- -f1 | sed 's/i.86/i386/'`
 if test "$CONFIG_HOST" != "Linux"; then
   nok=1
   AC_MSG_RESULT([unsupported host])

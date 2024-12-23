@@ -1,9 +1,13 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_CONFIG_FILES([Makefile.conf])
+
+# for dumpmachine
+AC_PROG_CC
+
 CONFIG_HOST=`uname -s`
 CONFIG_OS=`uname -o`
-machine=`cc -dumpmachine | cut -d- -f1 | sed 's/i.86/i386/'`
+machine=`$CC -dumpmachine | cut -d- -f1 | sed 's/i.86/i386/'`
 if test "$CONFIG_HOST" != "Linux"; then
   AC_MSG_ERROR([dnative only supported on linux])
 fi
