@@ -17,8 +17,10 @@ PKG_CHECK_MODULES([SEARPC], [libsearpc], [
   [ AC_MSG_ERROR(libsearpc-devel not found) ]
 )
 
-AC_PATH_PROGS([RPCGEN], [searpc-codegen searpc-codegen.py],
-  [AC_MSG_ERROR(searpc-codegen not found)])
+AC_PATH_PROGS([RPCGEN], [searpc-codegen searpc-codegen.py])
+if test -z "$RPCGEN"; then
+  AC_MSG_ERROR(searpc-codegen not found)
+fi
 AC_SUBST(RPCGEN)
 
 AC_MSG_CHECKING([for remote DPMI-compatible host])
