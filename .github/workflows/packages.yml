@@ -17,16 +17,23 @@ jobs:
     strategy:
       matrix:
         target_arch: [aarch64, arm, i686, x86_64]
-      fail-fast: false
+      fail-fast: true
     steps:
     - name: Clone repository
       uses: actions/checkout@v4
       with:
-        repository: 'stsp/termux-packages'
+        repository: 'termux/termux-packages'
         ref: 'master'
         fetch-depth: 100
-    - run: git fetch origin dosemu2
-    - run: git checkout dosemu2
+    - name: Fetch dosemu2 termux recipes
+      run: |
+        git remote add stsp https://github.com/stsp/termux-packages.git
+        git fetch stsp dosemu2
+        git checkout dosemu2
+        git config --global user.email "ci@github"
+        git config --global user.name "Github Action CI"
+        git rebase master
+
     - name: Gather build summary
       id: build-info
       run: |
