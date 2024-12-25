@@ -22,12 +22,13 @@ jobs:
     - name: Clone repository
       uses: actions/checkout@v4
       with:
-        repository: 'termux/termux-packages'
+        repository: 'termux-user-repository/tur'
         ref: 'master'
         fetch-depth: 100
     - name: Fetch dosemu2 termux recipes
       run: |
-        git remote add stsp https://github.com/stsp/termux-packages.git
+        ./setup-environment.sh
+        git remote add stsp https://github.com/stsp/tur.git
         git fetch stsp dosemu2
         git checkout dosemu2
         git config --global user.email "ci@github"
