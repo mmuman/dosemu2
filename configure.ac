@@ -19,8 +19,8 @@ AC_PROG_CPP
 AX_PROG_CC_FOR_BUILD
 AC_USE_SYSTEM_EXTENSIONS
 
-# termux uses PREFIX var for default prefix, but we add /local to it
-AC_PREFIX_DEFAULT([${PREFIX:-/usr}/local])
+# termux uses PREFIX var for default prefix
+AC_PREFIX_DEFAULT([${PREFIX:-/usr/local}])
 if test -n "$PREFIX"; then
   LDFLAGS="$LDFLAGS -L${ac_default_prefix}/lib"
   export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:${ac_default_prefix}/lib/pkgconfig:${ac_default_prefix}/share/pkgconfig"
