@@ -45,8 +45,8 @@ AC_ARG_WITH([fdpp-lib-dir], AS_HELP_STRING([--with-fdpp-lib-dir=DIR],
       AC_ARG_WITH([fdpp-rpath], AS_HELP_STRING([--with-fdpp-rpath=DIR],
         [add alternate fdpp rpath]),
         [FDPP_RPATH="$fdpp_rpath"],
-        [FDPP_RPATH="/usr/lib/fdpp"
-         FDPP_RPATH2="/usr/lib64/fdpp"]
+        [FDPP_RPATH="${PREFIX:-/usr}/lib/fdpp"
+         FDPP_RPATH2="${PREFIX:-/usr}/lib64/fdpp"]
       )
     else
       FDPP_RPATH="$prefix/lib/fdpp"
