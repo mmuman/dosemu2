@@ -122,7 +122,7 @@ FILE *fstream_tee(FILE *orig);
 }
 
 #ifdef __ANDROID__
-#define pthread_cancel(t) pthread_kill(t, SIGKILL)
+#define pthread_cancel(t) pthread_kill(t, SIGTERM)
 #define pthread_setcancelstate(x, y)
 #define pthread_testcancel(x)
 #endif
