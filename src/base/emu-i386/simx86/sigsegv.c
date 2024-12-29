@@ -257,7 +257,7 @@ static int e_emu_pagefault(sigcontext_t *scp, int pmode)
 	if (e_vgaemu_fault(scp, cr2) == 1)
 	    return 1;
 
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 	if (e_handle_pagefault(cr2, _scp_err, scp))
 	    return 1;
 #endif

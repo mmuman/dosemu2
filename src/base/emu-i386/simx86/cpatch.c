@@ -37,7 +37,7 @@
 #include "codegen-arch.h"
 #include "cpatch.h"
 
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 
 static int in_cpatch;
 
@@ -557,7 +557,7 @@ int UnCpatch(unsigned char *eip)
     return 0;
 }
 
-#endif	//HOST_ARCH_X86
+#endif	//X86_JIT
 
 /* ======================================================================= */
 

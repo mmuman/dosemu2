@@ -39,7 +39,9 @@
 #include "emu86.h"
 #include "codegen.h"
 #include "codegen-sim.h"
+#ifndef HAVE___FLOAT80
 #include "softfloat/softfloat.h"
+#endif
 
 #define FPUS_IE (1 << 0)
 #define FPUS_DE (1 << 1)
@@ -98,7 +100,7 @@ static long double _fparea[8];
 void init_emu_npu (void)
 {
 	int i;
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 	if (!CONFIG_CPUSIM) {
 		init_emu_npu_x86();
 		return;

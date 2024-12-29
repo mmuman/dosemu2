@@ -100,7 +100,7 @@ static int handle_pf(cpuctx_t *scp)
         return DPMI_RET_CLIENT;
 #endif
 #ifdef X86_EMULATOR
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
     /* DPMI code touches cpuemu prot */
     if (IS_EMU_JIT() && e_invalidate_page_full(cr2))
         return DPMI_RET_CLIENT;

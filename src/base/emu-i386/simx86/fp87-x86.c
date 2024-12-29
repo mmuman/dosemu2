@@ -35,7 +35,7 @@
 #include <stddef.h>
 #include "emu86.h"
 
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 
 #include "codegen-x86.h"
 

@@ -114,7 +114,7 @@
 #include "emu86.h"
 #include "dlmalloc.h"
 #include "mapping.h"
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 #include "codegen-x86.h"
 #include "cpatch.h"
 

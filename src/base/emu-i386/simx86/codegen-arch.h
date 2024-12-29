@@ -6,6 +6,6 @@
 
 #include "codegen.h"
 #include "codegen-sim.h"
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 #include "codegen-x86.h"
 #endif

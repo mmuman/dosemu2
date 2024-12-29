@@ -366,7 +366,7 @@ static int e_munprotect(unsigned int addr, size_t len)
 	return ret;
 }
 
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 int e_handle_pagefault(dosaddr_t addr, unsigned err, sigcontext_t *scp)
 {
 	register int v;

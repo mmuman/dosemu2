@@ -76,7 +76,7 @@ static __inline__ void SetCPU_WL(int m, signed char o, unsigned long v)
 
 static unsigned int DoCloseAndExec(unsigned int PC, int mode)
 {
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
     if (!CONFIG_CPUSIM) {
 	unsigned P0 = InstrMeta[0].npc;
 	if (e_querymark(P0, PC - P0))
@@ -95,7 +95,7 @@ static unsigned int DoCloseAndExec(unsigned int PC, int mode)
  *	from P0, abort the current instruction and resume the parsing
  *	loop at P2.
  */
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 #define CODE_FLUSH2(m)	{ if (CONFIG_CPUSIM || CurrIMeta>0) {\
 			  unsigned int P2 = DoCloseAndExec(P0, m);\
 			  if (TheCPU.err) return P2;\
@@ -107,7 +107,7 @@ static unsigned int DoCloseAndExec(unsigned int PC, int mode)
 			  if (TheCPU.err) return P2;\
 			  NewNode=0; }
 #endif
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 #define CODE_FLUSH()	{ if (CONFIG_CPUSIM || CurrIMeta>0) {\
 			  unsigned int P2 = DoCloseAndExec(P0, _mode);\
 			  if (TheCPU.err || P0 != P2) return P2;\
@@ -264,7 +264,7 @@ static unsigned int _JumpGen(unsigned int P2, int mode, int opc,
 		    }
 		    if (CONFIG_CPUSIM)
 			Gen(JB_LINK, mode, opc, P2, j_t, j_nt);
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 		    else
 			Gen(JB_LINK, mode, opc, P2, j_t, j_nt, &InstrMeta[0].clink);
 #endif
@@ -283,7 +283,7 @@ static unsigned int _JumpGen(unsigned int P2, int mode, int opc,
 		    /* forward jump or backward jump >=256 bytes */
 		    if (CONFIG_CPUSIM)
 			Gen(JF_LINK, mode, opc, P2, j_t, j_nt);
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 		    else
 			Gen(JF_LINK, mode, opc, P2, j_t, j_nt, &InstrMeta[0].clink);
 #endif
@@ -311,7 +311,7 @@ static unsigned int _JumpGen(unsigned int P2, int mode, int opc,
 		if (dsp <= 0) mode |= CKSIGN;
 		if (CONFIG_CPUSIM)
 		    Gen(JMP_LINK, mode, opc, j_t, d_nt);
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 		else
 		    Gen(JMP_LINK, mode, opc, j_t, d_nt, &InstrMeta[0].clink);
 #endif
@@ -327,7 +327,7 @@ static unsigned int _JumpGen(unsigned int P2, int mode, int opc,
 	case CALLd:    /* call, unfortunately also uses JMP_LINK */
 		if (CONFIG_CPUSIM)
 		    Gen(JMP_LINK, mode, opc, j_t, d_nt);
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 		else
 		    Gen(JMP_LINK, mode, opc, j_t, d_nt, &InstrMeta[0].clink);
 #endif
@@ -347,7 +347,7 @@ static unsigned int _JumpGen(unsigned int P2, int mode, int opc,
 		}
 		if (CONFIG_CPUSIM)
 		    Gen(JLOOP_LINK, mode, opc, j_t, j_nt);
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 		else
 		    Gen(JLOOP_LINK, mode, opc, j_t, j_nt, &InstrMeta[0].clink);
 #endif
@@ -361,7 +361,7 @@ static unsigned int _JumpGen(unsigned int P2, int mode, int opc,
 	case RET: case RETisp: case JMPi: case CALLi: // ret, indirect
 		if (CONFIG_CPUSIM)
 			Gen(JMP_INDIRECT, mode);
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 		else
 			Gen(JMP_INDIRECT, mode, &InstrMeta[0].clink);
 #endif
@@ -390,7 +390,7 @@ static unsigned int _JumpGen(unsigned int P2, int mode, int opc,
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if !defined(SINGLESTEP)&&defined(HOST_ARCH_X86)
+#if !defined(SINGLESTEP)&&defined(X86_JIT)
 static unsigned int FindExecCode(unsigned int PC)
 {
 	int mode = TheCPU.mode;
@@ -524,7 +524,7 @@ static unsigned int interp_pre(unsigned int PC, const int mode, int *_NewNode,
 				if (TheCPU.err) return PC;
 			}
 		}
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 		if (!CONFIG_CPUSIM && e_querymark(PC, 1)) {
 			unsigned int P2 = PC;
 			if (NewNode) {
@@ -576,7 +576,7 @@ static unsigned int interp_pre(unsigned int PC, const int mode, int *_NewNode,
 static unsigned int interp_post(unsigned int PC, const int mode,
 	int *_NewNode, unsigned *_P0)
 {
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 		if (NewNode) {
 			int rc=0;
 			if (!CONFIG_CPUSIM && !(TheCPU.mode&SKIPOP)) {
@@ -856,7 +856,7 @@ intop3b:		{ int op = ArOpsFR[D_MO(opc)];
 /*9c*/	case PUSHF: {
 			if (V86MODE() && (IOPL<3)) {
 			    if (CONFIG_CPUSIM) FlagSync_All();
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 			    else CODE_FLUSH();
 #endif
 			    /* virtual-8086 monitor */
@@ -2287,7 +2287,7 @@ repag0:
 			if ((EFLAGS & TF) && !(repmod & (MREP|MREPNE))) {
 				/* with TF set, we simulate REP and maybe back
 				   up IP */
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 				int rc = 0;
 				if (!CONFIG_CPUSIM) {
 					NewIMeta(P0, &rc);

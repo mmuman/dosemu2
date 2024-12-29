@@ -738,7 +738,7 @@ void FreeGenCodeBuf(void *ptr);
 void CollectStat(void);
 //
 /////////////////////////////////////////////////////////////////////////////
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 int e_handle_pagefault(dosaddr_t addr, unsigned err, sigcontext_t *scp);
 int e_handle_fault(sigcontext_t *scp);
 void init_emu_npu_x86(void);

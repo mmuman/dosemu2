@@ -43,8 +43,11 @@ extern void e_priv_iopl(int);
 #define CPUEMU_DIRECT_IO
 #endif
 
-#ifdef X86_JIT
+#if defined(__x86_64__) || defined(__i386__)
 #define HOST_ARCH_X86
+#endif
+
+#ifdef X86_JIT
 #define IS_EMU_JIT() (IS_EMU() && !config.cpusim)
 #else
 #define IS_EMU_JIT() (0)

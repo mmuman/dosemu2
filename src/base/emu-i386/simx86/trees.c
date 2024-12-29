@@ -76,7 +76,7 @@ int NodesNotFound = 0;
 int TreeCleanups = 0;
 #endif
 
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 
 #define FINDTREE_CACHE_HASH_MASK 0xfff
 static TNode *findtree_cache[FINDTREE_CACHE_HASH_MASK+1];
@@ -524,13 +524,13 @@ void avltr_delete (const int key)
   }
 }
 
-#endif	// HOST_ARCH_X86
+#endif	// X86_JIT
 
 /////////////////////////////////////////////////////////////////////////////
 
 static void avltr_init(void)
 {
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
  if (!config.cpusim) {
   int i;
   TNode *G;
@@ -560,7 +560,7 @@ static void avltr_init(void)
 }
 
 
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 
 void avltr_destroy(void)
 {
@@ -1277,7 +1277,7 @@ quit:
 }
 
 
-#endif // HOST_ARCH_X86
+#endif // X86_JIT
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1285,7 +1285,7 @@ static void do_invalidate(unsigned data, int cnt)
 {
 	cnt = PAGE_ALIGN(data + cnt) - (data & _PAGE_MASK);
 	data &= _PAGE_MASK;
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 	/* e_querymprotrange prevents coming here for sim */
 	assert (!config.cpusim);
 	InvalidateNodeRange(data, cnt, 0);
@@ -1299,7 +1299,7 @@ void e_invalidate(unsigned data, int cnt)
 	/* nothing to invalidate if there are no page protections */
 	if (!e_querymprotrange(data, cnt))
 		return;
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 	/* e_querymprotrange prevents coming here for sim */
 	assert(!config.cpusim);
 	if (!e_querymark(data, cnt))
@@ -1355,7 +1355,7 @@ int e_invalidate_page_full(unsigned data)
 /////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 
 static void CleanIMeta(void)
 {
@@ -1430,7 +1430,7 @@ quit:
 	return -1;
 }
 
-#endif	// HOST_ARCH_X86
+#endif	// X86_JIT
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1505,14 +1505,14 @@ void CollectStat (void)
 void InitTrees(void)
 {
 	g_printf("InitTrees\n");
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 	if (!config.cpusim)
 	    TNodePool = calloc(NODES_IN_POOL, sizeof(TNode));
 #endif
 
 	avltr_init();
 
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 	if (!config.cpusim && debug_level('e')>1) {
 	    e_printf("Root tree node at %p\n",&CollectTree.root);
 	    e_printf("TNode pool at %p\n",TNodePool);
@@ -1538,12 +1538,12 @@ void EndGen(void)
 	int i;
 	int csm = config.CPUSpeedInMhz*1000;
 #endif
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 	if (!config.cpusim)
 	    CleanIMeta();
 #endif
 	CurrIMeta = -1;
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 	if (!config.cpusim) {
 	    avltr_destroy();
 	    free(TNodePool); TNodePool=NULL;

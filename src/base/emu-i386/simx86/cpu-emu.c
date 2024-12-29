@@ -49,7 +49,9 @@
 #include "mapping.h"
 #include "dis8086.h"
 #include "sig.h"
+#ifndef HAVE___FLOAT80
 #include "softfloat/softfloat.h"
+#endif
 
 /* ======================================================================= */
 
@@ -772,7 +774,7 @@ void init_emu_cpu(void)
 		break;
   }
   e_printf("EMU86: tss mask=%08lx\n", eTSSMASK);
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
   if (config.cpusim)
     InitGen_sim();
   else {
@@ -796,7 +798,7 @@ void init_emu_cpu(void)
 	TheCPU.LDTR.Base = (long)LDT;
 	TheCPU.LDTR.Limit = 0xffff;
   }
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
   TheCPU.unprotect_stub = stub_rep;
   TheCPU.stub_wri_8 = stub_wri_8;
   TheCPU.stub_wri_16 = stub_wri_16;
@@ -905,7 +907,7 @@ void leave_cpu_emu(void)
 		if (IOFF(0x10)==CPUEMU_WATCHER_OFF)
 			IOFF(0x10)=INT10_WATCHER_OFF;
 #endif
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
 		EndGen();
 #endif
 #ifdef DEBUG_TREE
@@ -1228,7 +1230,7 @@ void instr_emu_sim(cpuctx_t *scp, int pmode)
     kvm_leave(pmode);
   /* this changes CONFIG_CPUSIM value, so should be before init */
   CEmuStat |= CeS_INSTREMU;
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
   if (!config.cpusim) {
     InitGen_sim();
     init_emu_npu();
@@ -1245,7 +1247,7 @@ void instr_sim_leave(int pmode)
   interp_inst_emu_count = 0;
   cpuemu_leave(pmode);
   CEmuStat &= ~CeS_INSTREMU;
-#ifdef HOST_ARCH_X86
+#ifdef X86_JIT
   /* back to regular JIT */
   if (!config.cpusim) {
     InitGen_x86();
