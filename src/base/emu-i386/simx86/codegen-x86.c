@@ -3328,12 +3328,6 @@ static void Exec_x86_post(unsigned long flg, unsigned int mem_ref)
 #define R_REG(r) "%e"#r
 #define EXEC_CLOBBERS
 #endif
-asm(".text\n"
-    ".global do_seq_start\n"
-    "do_seq_start:\n"
-    "push "R_REG(dx)"\n"
-    "jmp *"R_REG(ax)"\n");
-ASMLINKAGE(void,do_seq_start,(void));
 static unsigned Exec_x86_asm(unsigned *mem_ref, unsigned long *flg,
 		unsigned char *ecpu, unsigned char *SeqStart)
 {
@@ -3349,17 +3343,31 @@ static unsigned Exec_x86_asm(unsigned *mem_ref, unsigned long *flg,
 		"addq	$-128,%%rsp\n"	/* go below red zone		*/
 		"andq	$~15,%%rsp\n"	/* 16-byte stack alignment	*/
 #endif
-		"call	*%[ss]\n"		/* call SeqStart                */
+		/* things like "push 1f" will create text reloc,
+		 * so no go for pie. */
+		"call	1f\n"		/* save return addr		*/
+		"jmp	2f\n"
+		"1:\n"
+		"push	%4\n"
+		"jmp	*%5\n"
+		"2:\n"
 #ifdef __x86_64__
 		"movq	%%r12,%%rsp\n"
 #endif
 		"xchg	%[mb], "RE_REG(bp)"\n"
 		: "=d"(*flg),"=a"(ePC),"=D"(*mem_ref)
-		: "b"(ecpu),"d"(*flg),"a"(SeqStart),[ss]"r"(do_seq_start),
+		: "b"(ecpu),"d"(*flg),"a"(SeqStart),
 		  [mb]"m"(jb)  // don't use "r" or can run out of regs
 		/* Note: we need to clobber "class-less" regs (like %rbp) even
 		 * if we save/restore them, to avoid gcc from allocating
 		 * them to "r". But in this case we don't need to save/restore.
+		 *
+		 * The above Note appears troublesome, as clobbering %rbp
+		 * may require -fomit-frame-pointer, which is a PITA.
+		 * The alternative is to not use "r" at all, use only "m".
+		 * Unfortunately in this case we can't pass do_seq_start,
+		 * at least on clang (doesn't support "m" for functions),
+		 * so it needs to be inlined.
 		 */
 		: "memory", "cc", "ecx", "esi" EXEC_CLOBBERS
 	);
