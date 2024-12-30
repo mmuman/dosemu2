@@ -700,17 +700,16 @@ if test "$enable_cpuemu" != "no"; then
     ])],
     [
 	AC_MSG_RESULT([supported])
-	OMIT_FP=1
     ],
     [
 	AC_MSG_RESULT([unsupported])
-	OMIT_FP=0
+	DOSEMU_CFLAGS="$DOSEMU_CFLAGS -fomit-frame-pointer"
     ]
   )
   AX_RESTORE_FLAGS([attr2_check])
 
   if test "$machine" = "i386" -o "$machine" = "x86_64"; then
-   if test "$CONFIG_OS" != "Android" -a "$OMIT_FP" = "1"; then
+   if test "$CONFIG_OS" != "Android"; then
     AC_ARG_ENABLE(cpuemu_jit, [AS_HELP_STRING([--disable-cpuemu-jit],
         [do NOT compile with optional x86 JIT])])
     if test "$enable_cpuemu_jit" != "no"; then
