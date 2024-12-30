@@ -3332,7 +3332,9 @@ static unsigned Exec_x86_asm(unsigned *mem_ref, unsigned long *flg,
 		unsigned char *ecpu, unsigned char *SeqStart)
 {
 	unsigned ePC;
-	void *jb = jit_base;
+	static void *jb;  // static so that "m" asm ref not using %rbp
+
+	jb = jit_base;
 	InCompiledCode = 1;
 	asm volatile (
 		/* Do this before modifying RSP to allow mem refs for arg.
