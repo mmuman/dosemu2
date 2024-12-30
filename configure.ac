@@ -689,7 +689,6 @@ if test "$enable_cpuemu" != "no"; then
   AC_SUBST(X86_EMULATOR)
 
   if test "$machine" = "i386" -o "$machine" = "x86_64"; then
-   if test "$CONFIG_OS" != "Android"; then
     AC_ARG_ENABLE(cpuemu_jit, [AS_HELP_STRING([--disable-cpuemu-jit],
         [do NOT compile with optional x86 JIT])])
     if test "$enable_cpuemu_jit" != "no"; then
@@ -698,7 +697,6 @@ if test "$enable_cpuemu" != "no"; then
       X86_JIT=1
       AC_SUBST(X86_JIT)
     fi
-   fi
   fi
 fi
 
