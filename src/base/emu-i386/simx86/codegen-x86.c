@@ -3343,12 +3343,13 @@ static unsigned Exec_x86_asm(unsigned *mem_ref, unsigned long *flg,
 	unsigned ePC;
 	InCompiledCode = 1;
 	asm volatile (
+		/* do this before modifying RSP to allow mem refs for arg */
+		"mov	%[mb], "RE_REG(bp)"\n"
 #ifdef __x86_64__
 		"movq	%%rsp,%%r12\n"
 		"addq	$-128,%%rsp\n"	/* go below red zone		*/
 		"andq	$~15,%%rsp\n"	/* 16-byte stack alignment	*/
 #endif
-		"mov	%[mb], "RE_REG(bp)"\n"
 		"call	*%[ss]\n"		/* call SeqStart                */
 #ifdef __x86_64__
 		"movq	%%r12,%%rsp\n"
