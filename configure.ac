@@ -688,27 +688,6 @@ if test "$enable_cpuemu" != "no"; then
   X86_EMULATOR=1
   AC_SUBST(X86_EMULATOR)
 
-  AC_MSG_CHECKING([for __attribute__((optimize("omit-frame-pointer")))])
-  AX_SAVE_FLAGS([attr2_check])
-  CFLAGS="-Wall -Werror -fno-omit-frame-pointer"
-  AC_COMPILE_IFELSE([AC_LANG_SOURCE([
-	void foo(void);
-	__attribute__((optimize("omit-frame-pointer")))
-	void foo(void)
-	{
-	}
-    ])],
-    [
-	AC_MSG_RESULT([supported])
-	AC_DEFINE([HAVE_ATTR_OMIT_FP])
-    ],
-    [
-	AC_MSG_RESULT([unsupported])
-	DOSEMU_CFLAGS="$DOSEMU_CFLAGS -fomit-frame-pointer"
-    ]
-  )
-  AX_RESTORE_FLAGS([attr2_check])
-
   if test "$machine" = "i386" -o "$machine" = "x86_64"; then
    if test "$CONFIG_OS" != "Android"; then
     AC_ARG_ENABLE(cpuemu_jit, [AS_HELP_STRING([--disable-cpuemu-jit],
@@ -914,9 +893,6 @@ AH_TEMPLATE([SIG_PROTO_PFX],
 
 AH_TEMPLATE([HAVE_STD_C11],
 [Define this if your compiler supports c11])
-
-AH_TEMPLATE([HAVE_ATTR_OMIT_FP],
-[Define this if your compiler supports attribute optimize/omit-frame-pointer])
 
 AH_TEMPLATE([HAVE_STATIC_ASSERT],
 [Define this if your glibc defines static_assert])
