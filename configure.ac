@@ -700,6 +700,7 @@ if test "$enable_cpuemu" != "no"; then
     ])],
     [
 	AC_MSG_RESULT([supported])
+	AC_DEFINE([HAVE_ATTR_OMIT_FP])
     ],
     [
 	AC_MSG_RESULT([unsupported])
@@ -913,6 +914,9 @@ AH_TEMPLATE([SIG_PROTO_PFX],
 
 AH_TEMPLATE([HAVE_STD_C11],
 [Define this if your compiler supports c11])
+
+AH_TEMPLATE([HAVE_ATTR_OMIT_FP],
+[Define this if your compiler supports attribute optimize/omit-frame-pointer])
 
 AH_TEMPLATE([HAVE_STATIC_ASSERT],
 [Define this if your glibc defines static_assert])
